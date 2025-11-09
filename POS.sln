@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "POS.Domain", "POS.Domain\PO
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "POS.Infrastructure", "POS.Infrastructure\POS.Infrastructure.csproj", "{3BD909E7-0FD0-4644-8646-81D76403D458}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "POS.Web", "POS.Web\POS.Web.csproj", "{8E7DA488-EC6C-4C4C-8911-0990719844F6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -55,6 +57,18 @@ Global
 		{3BD909E7-0FD0-4644-8646-81D76403D458}.Release|x64.Build.0 = Release|Any CPU
 		{3BD909E7-0FD0-4644-8646-81D76403D458}.Release|x86.ActiveCfg = Release|Any CPU
 		{3BD909E7-0FD0-4644-8646-81D76403D458}.Release|x86.Build.0 = Release|Any CPU
+		{8E7DA488-EC6C-4C4C-8911-0990719844F6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8E7DA488-EC6C-4C4C-8911-0990719844F6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8E7DA488-EC6C-4C4C-8911-0990719844F6}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{8E7DA488-EC6C-4C4C-8911-0990719844F6}.Debug|x64.Build.0 = Debug|Any CPU
+		{8E7DA488-EC6C-4C4C-8911-0990719844F6}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{8E7DA488-EC6C-4C4C-8911-0990719844F6}.Debug|x86.Build.0 = Debug|Any CPU
+		{8E7DA488-EC6C-4C4C-8911-0990719844F6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8E7DA488-EC6C-4C4C-8911-0990719844F6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8E7DA488-EC6C-4C4C-8911-0990719844F6}.Release|x64.ActiveCfg = Release|Any CPU
+		{8E7DA488-EC6C-4C4C-8911-0990719844F6}.Release|x64.Build.0 = Release|Any CPU
+		{8E7DA488-EC6C-4C4C-8911-0990719844F6}.Release|x86.ActiveCfg = Release|Any CPU
+		{8E7DA488-EC6C-4C4C-8911-0990719844F6}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
