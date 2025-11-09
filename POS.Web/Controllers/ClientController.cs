@@ -17,6 +17,7 @@ public class ClientController : Controller
     }
 
     [HttpGet]
+    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public async Task<IActionResult> ListClient(string? q, CancellationToken ct)
     {
         _logger.LogInformation("GET ListClient started. Query={Query}", q);

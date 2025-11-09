@@ -18,6 +18,7 @@ public class ProductController : Controller
     }
 
     [HttpGet]
+    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public async Task<IActionResult> ListProduct(string? q, CancellationToken ct)
     {
         _logger.LogInformation("GET ListProduct started. Query={Query}", q);
