@@ -1,0 +1,51 @@
+@using POS.Domain.Enums
+@model POS.Domain.Entities.Product
+
+@{
+    ViewBag.Title = "Detalles del Producto";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="max-w-2xl mx-auto bg-[color:var(--light-panel)] border border-[color:var(--border)] rounded-2xl shadow-sm p-8 mt-10">
+    <h1 class="text-2xl font-bold text-[color:var(--primary)] mb-6 flex items-center gap-2">
+        <i data-lucide="eye" class="w-6 h-6 text-[color:var(--secondary)]"></i>
+        Detalles del Producto
+    </h1>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 text-[color:var(--txt-primary)]">
+        <div><span class="font-semibold">Nombre:</span> @Model.Name</div>
+        <div><span class="font-semibold">Categoría ID:</span> @Model.CategoryId</div>
+        <div><span class="font-semibold">Precio:</span> ₡@Model.Price.ToString("N2")</div>
+        <div><span class="font-semibold">Impuesto (%):</span> @Model.TaxPercent.ToString("N2")%</div>
+        <div><span class="font-semibold">Stock:</span> @Model.Stock</div>
+
+        <div class="sm:col-span-2">
+            <span class="font-semibold">Imagen:</span>
+            @if (!string.IsNullOrWhiteSpace(Model.ImageUrl))
+            {
+                <img src="@Model.ImageUrl" alt="@Model.Name" class="mt-2 rounded-xl shadow-sm max-h-48" />
+            }
+            else
+            {
+                <span class="text-[color:var(--txt-secondary)]">No hay imagen disponible</span>
+            }
+        </div>
+
+        <div>
+            <span class="font-semibold">Estado:</span>
+            @{
+                var isActive = Model.Status == ProductStatus.Active;
+            }
+            <span class="ml-2 px-3 py-1 rounded-full text-xs font-medium @(isActive ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700")">
+                @(isActive ? "Activo" : "Inactivo")
+            </span>
+        </div>
+    </div>
+
+    <div class="mt-8 flex justify-end">
+        <a asp-controller="Product" asp-action="ListProduct"
+           class="px-5 py-2.5 border border-[color:var(--border)] text-[color:var(--txt-secondary)] rounded-xl hover:bg-[color:var(--light-bg)] transition-colors">
+            Volver
+        </a>
+    </div>
+</div>

@@ -1,0 +1,25 @@
+@model POS.Web.Models.ErrorViewModel
+@{
+    ViewData["Title"] = "Server Error";
+}
+<section class="flex flex-col items-center justify-center text-center gap-6 py-24">
+  <div class="flex items-center justify-center w-20 h-20 rounded-2xl bg-error/10 text-error">
+    <svg class="w-10 h-10" viewBox="0 0 24 24" fill="currentColor"><path d="M2 12C2 6.48 6.48 2 12 2s10 4.48 10 10-4.48
+    10-10 10S2 17.52 2 12zm11-5h-2v6h2V7zm0 8h-2v2h2v-2z"/></svg>
+  </div>
+  <div>
+    <h1 class="text-3xl font-bold tracking-tight">Something went wrong</h1>
+    <p class="mt-2 text-txt-secondary max-w-md">An unexpected error occurred.</p>
+    @if (!string.IsNullOrWhiteSpace(Model?.TraceId))
+    {
+      <p class="mt-2 text-xs text-txt-secondary">Trace ID: <code>@Model.TraceId</code></p>
+    }
+  </div>
+  <div class="flex items-center gap-3">
+    <a asp-controller="Home" asp-action="Index"
+       class="px-4 py-2 rounded-xl bg-[color:var(--primary)] text-white hover:bg-[color:var(--primary-dark)] shadow-soft">Go Home</a>
+    <a asp-controller="Products" asp-action="ListProduct"
+       class="px-4 py-2 rounded-xl border border-border text-txt-primary hover:bg-light-bg">Products</a>
+  </div>
+</section>
+

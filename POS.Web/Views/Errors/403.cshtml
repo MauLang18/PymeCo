@@ -1,0 +1,17 @@
+@{
+    ViewData["Title"] = "Forbidden";
+}
+<section class="flex flex-col items-center justify-center text-center gap-6 py-24">
+  <div class="flex items-center justify-center w-20 h-20 rounded-2xl bg-warning/10 text-warning">
+    <svg class="w-10 h-10" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L1 21h22L12 2zm0 6l7 13H5L12 8zm-1 3h2v5h-2v-5z"/></svg>
+  </div>
+  <div>
+    <h1 class="text-3xl font-bold tracking-tight">Access denied</h1>
+    <p class="mt-2 text-txt-secondary max-w-md">
+      You don’t have permission to access this resource.
+    </p>
+  </div>
+  <a asp-controller="Home" asp-action="Index"
+     class="px-4 py-2 rounded-xl bg-[color:var(--primary)] text-white hover:bg-[color:var(--primary-dark)] shadow-soft">Go Home</a>
+</section>
+

@@ -1,0 +1,73 @@
+@* Views/Client/EditClient.cshtml *@
+@model POS.Domain.Entities.Client
+@{
+    ViewBag.Title = "Editar Cliente";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="max-w-2xl mx-auto bg-[color:var(--light-panel)] border border-[color:var(--border)] rounded-2xl shadow-sm p-8 mt-10">
+    <h1 class="text-2xl font-bold text-[color:var(--txt-primary)] mb-6 flex items-center gap-2">
+        <i data-lucide="edit-2" class="w-6 h-6 text-[color:var(--primary)]"></i>
+        Editar Cliente
+    </h1>
+
+    <form asp-action="EditClient" asp-controller="Client" asp-route-id="@Model.Id" method="post" class="space-y-6">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="Id" value="@Model.Id" />
+
+        <div class="text-[color:var(--error)] text-sm" asp-validation-summary="ModelOnly"></div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div>
+                <label for="Name" class="block text-sm font-medium text-[color:var(--txt-secondary)] mb-2">Nombre</label>
+                <input id="Name" name="Name" value="@Model.Name" maxlength="200" placeholder="Nombre completo del cliente"
+                       class="w-full border border-[color:var(--border)] rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[color:var(--primary)]" />
+                <span class="text-[color:var(--error)] text-sm" asp-validation-for="Name"></span>
+            </div>
+
+            <div>
+                <label for="NationalId" class="block text-sm font-medium text-[color:var(--txt-secondary)] mb-2">Cédula</label>
+                <input id="NationalId" name="NationalId" value="@Model.NationalId" maxlength="40" placeholder="Cédula"
+                       class="w-full border border-[color:var(--border)] rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[color:var(--primary)]" />
+                <span class="text-[color:var(--error)] text-sm" asp-validation-for="NationalId"></span>
+            </div>
+
+            <div>
+                <label for="Email" class="block text-sm font-medium text-[color:var(--txt-secondary)] mb-2">Correo</label>
+                <input id="Email" name="Email" value="@Model.Email" type="email" maxlength="200" placeholder="correo@ejemplo.com"
+                       class="w-full border border-[color:var(--border)] rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[color:var(--primary)]" />
+                <span class="text-[color:var(--error)] text-sm" asp-validation-for="Email"></span>
+            </div>
+
+            <div>
+                <label for="Phone" class="block text-sm font-medium text-[color:var(--txt-secondary)] mb-2">Teléfono</label>
+                <input id="Phone" name="Phone" value="@Model.Phone" maxlength="50" placeholder="Número de teléfono"
+                       class="w-full border border-[color:var(--border)] rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[color:var(--primary)]" />
+                <span class="text-[color:var(--error)] text-sm" asp-validation-for="Phone"></span>
+            </div>
+
+            <div class="sm:col-span-2">
+                <label for="Address" class="block text-sm font-medium text-[color:var(--txt-secondary)] mb-2">Dirección</label>
+                <textarea id="Address" name="Address" rows="3" maxlength="500" placeholder="Dirección del cliente"
+                          class="w-full border border-[color:var(--border)] rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[color:var(--primary)]">@Model.Address</textarea>
+                <span class="text-[color:var(--error)] text-sm" asp-validation-for="Address"></span>
+            </div>
+        </div>
+
+        <div class="mt-8 flex justify-end gap-4">
+            <a asp-controller="Client" asp-action="ListClient"
+               class="px-5 py-2.5 border border-[color:var(--border)] text-[color:var(--txt-secondary)] rounded-xl hover:bg-[color:var(--light-bg)] transition-colors">
+                Cancelar
+            </a>
+            <button type="submit"
+                    class="px-5 py-2.5 bg-[color:var(--primary)] text-white font-medium rounded-xl hover:bg-[color:var(--primary-dark)] transition-colors flex items-center gap-2">
+                <i data-lucide="save" class="w-5 h-5"></i> Guardar Cambios
+            </button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
+

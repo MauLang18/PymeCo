@@ -1,0 +1,16 @@
+@model int
+@{
+    ViewData["Title"] = $"HTTP {Model}";
+}
+<section class="flex flex-col items-center justify-center text-center gap-6 py-24">
+  <div class="flex items-center justify-center w-20 h-20 rounded-2xl bg-accent/10 text-accent">
+    <svg class="w-10 h-10" viewBox="0 0 24 24" fill="currentColor"><path d="M11 7h2v6h-2zM12 17a1.5 1.5 0 110 3 1.5 1.5 0 010-3z"/></svg>
+  </div>
+  <div>
+    <h1 class="text-3xl font-bold tracking-tight">HTTP @Model</h1>
+    <p class="mt-2 text-txt-secondary max-w-md">Your request could not be completed.</p>
+  </div>
+  <a asp-controller="Home" asp-action="Index"
+     class="px-4 py-2 rounded-xl bg-[color:var(--primary)] text-white hover:bg-[color:var(--primary-dark)] shadow-soft">Go Home</a>
+</section>
+

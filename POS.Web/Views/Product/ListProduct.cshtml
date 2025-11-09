@@ -1,0 +1,102 @@
+@model IEnumerable<POS.Domain.Entities.Product>
+
+@{
+    ViewBag.Title = "Listado de Productos";
+    var active = POS.Domain.Enums.ProductStatus.Active;
+}
+
+<div class="w-full px-6 py-8">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+        <h1 class="text-2xl font-bold text-[color:var(--txt-primary)]">@ViewBag.Title</h1>
+
+        <div class="flex items-center gap-3 mt-4 sm:mt-0">
+            <a href="@Url.Action("CreateProduct", "Product")"
+               class="px-4 py-2 rounded-xl text-white font-medium bg-[color:var(--primary)] hover:bg-[color:var(--primary-dark)] transition-colors">
+                <i data-lucide="plus" class="inline w-4 h-4 mr-1"></i> Nuevo Producto
+            </a>
+
+            <a id="productAlert"
+               href="#"
+               class="px-4 py-2 rounded-xl border border-[color:var(--primary)] text-[color:var(--primary)] hover:bg-[color:var(--primary)] hover:text-white transition-colors font-medium">
+                <i data-lucide="alert-circle" class="inline w-4 h-4 mr-1"></i> Alert
+            </a>
+        </div>
+    </div>
+
+    <div class="w-full overflow-x-auto shadow-sm rounded-2xl border border-[color:var(--border)] bg-[color:var(--light-panel)]">
+        <table class="min-w-full text-sm text-left text-[color:var(--txt-secondary)]">
+            <thead class="bg-[color:var(--light-bg)] text-[color:var(--txt-primary)] text-xs uppercase">
+                <tr>
+                    <th class="px-6 py-3 text-center font-semibold">Acciones</th>
+                    <th class="px-6 py-3 font-semibold">Nombre</th>
+                    <th class="px-6 py-3 font-semibold">Categoria</th>
+                    <th class="px-6 py-3 font-semibold text-right">Precio</th>
+                    <th class="px-6 py-3 font-semibold text-right">IVA (%)</th>
+                    <th class="px-6 py-3 font-semibold text-right">Cantidad</th>
+                    <th class="px-6 py-3 font-semibold">Imagen</th>
+                    <th class="px-6 py-3 font-semibold">Estado</th>
+                </tr>
+            </thead>
+
+            <tbody>
+            @if (Model != null && Model.Any())
+            {
+                foreach (var p in Model)
+                {
+                    <tr class="border-t border-[color:var(--border)] hover:bg-[color:var(--light-bg)] transition-colors">
+                        <td class="px-6 py-4 text-center">
+                            <div class="flex items-center justify-center gap-4">
+                                <a href="@Url.Action("EditProduct", "Product", new { id = p.Id })"
+                                   class="text-[color:var(--primary)] hover:text-[color:var(--primary-dark)] transition-colors"
+                                   title="Edit">
+                                    <i data-lucide="pencil-line" class="w-5 h-5"></i>
+                                </a>
+                                <a href="@Url.Action("DeleteProduct", "Product", new { id = p.Id })"
+                                   class="text-[color:var(--error)] hover:text-red-700 transition-colors"
+                                   title="Delete">
+                                    <i data-lucide="trash-2" class="w-5 h-5"></i>
+                                </a>
+                                <a href="@Url.Action("DetailsProduct", "Product", new { id = p.Id })"
+                                   class="text-[color:var(--secondary)] hover:text-emerald-600 transition-colors"
+                                   title="Details">
+                                    <i data-lucide="eye" class="w-5 h-5"></i>
+                                </a>
+                            </div>
+                        </td>
+
+                        <td class="px-6 py-4">@p.Name</td>
+                        <td class="px-6 py-4">@p.CategoryId</td> @* Replace with CategoryName if you add it *@
+                        <td class="px-6 py-4 text-right">₡@p.Price.ToString("N2")</td>
+                        <td class="px-6 py-4 text-right">@p.TaxPercent.ToString("N2")%</td>
+                        <td class="px-6 py-4 text-right">@p.Stock</td>
+                        <td class="px-6 py-4">
+                            @if (!string.IsNullOrWhiteSpace(p.ImageUrl))
+                            {
+                                <img src="@p.ImageUrl" alt="@p.Name" class="w-12 h-12 rounded-lg object-cover" />
+                            }
+                            else
+                            {
+                                <span class="text-gray-400 italic">No image</span>
+                            }
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="px-3 py-1 rounded-full text-xs font-medium
+                                         @(p.Status == active ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700")">
+                                @(p.Status == active ? "Active" : "Inactive")
+                            </span>
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="8" class="px-6 py-6 text-center text-gray-400">
+                        No products yet.
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>

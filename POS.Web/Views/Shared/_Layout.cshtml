@@ -1,0 +1,38 @@
+﻿@* Views/Shared/_Layout.cshtml *@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewBag.Title - PymeCo</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/PymeCo.styles.css" asp-append-version="true" />
+    <script src="https://kit.fontawesome.com/a2b4d3b6b5.js" crossorigin="anonymous"></script>
+</head>
+
+<body class="flex flex-col w-screen min-h-screen bg-gray-50 overflow-x-hidden">
+    @Html.Partial("_Topbar")
+
+    <div class="flex flex-1">
+        @Html.Partial("_Sidebar")
+        <main class="flex-1 p-6">
+            @RenderBody()
+        </main>
+    </div>
+
+    @Html.Partial("_Footer")
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js"></script>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>lucide.createIcons();</script>
+
+    @RenderSection("Scripts", required: false)
+</body>
+</html>
+

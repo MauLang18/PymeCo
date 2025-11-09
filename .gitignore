@@ -1,0 +1,136 @@
+## OS
+.DS_Store
+Thumbs.db
+
+## Dotnet build artifacts
+bin/
+obj/
+[Bb]uild/
+[Ll]og/
+*.tmp
+*.temp
+
+## Logs
+logs/
+*.log
+
+## User-specific files
+*.user
+*.userosscache
+*.suo
+*.sln.docstates
+
+## Visual Studio
+.vs/
+
+## Rider / JetBrains
+.idea/
+*.sln.iml
+
+## VS Code (keep common sharable files if you want)
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/launch.json
+!.vscode/tasks.json
+
+## NuGet
+*.nupkg
+*.snupkg
+# If you pack from a dedicated /artifacts folder, ignore it:
+artifacts/
+
+## Test results / coverage
+TestResult*/
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+coverage/
+.coverage/
+.coverlet/
+BenchmarkDotNet.Artifacts/
+
+## NCrunch
+*.ncrunch*
+_NCrunch_*/
+.*crunch*.local.xml
+
+## ReSharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+## DotCover
+*.dotCover
+
+## Dotnet local tools
+.dotnet-tools/
+
+## Entity Framework Core
+# Keep Migrations folder tracked; do not ignore by default.
+
+## Secrets / certificates (do not commit real secrets)
+secrets.json
+**/*.pfx
+**/*.p12
+*.key
+*.cer
+*.crt
+*.pem
+
+## Environment files
+.env
+.env.*
+!.env.example
+
+## ASP.NET Core
+# Static publish output
+wwwroot/dist/
+wwwroot/build/
+
+## Node / SPA (if you host a frontend in the repo)
+node_modules/
+dist/
+build/
+.npmrc
+.pnpm-debug.log
+yarn.lock # (optional; keep if you manage lockfiles per repo)
+pnpm-lock.yaml # (optional)
+package-lock.json # (optional)
+.next/
+.nuxt/
+.out/
+.svelte-kit/
+.cache/
+.eslintcache
+
+## Docker (runtime artifacts)
+**/.docker/
+**/.tmp/
+**/tmp/
+
+## Sonar / analyzers
+.sonar/
+.scannerwork/
+
+## Paket / FAKE / Cake (if used)
+.paket/
+paket-files/
+tools/
+.cake/
+cake-bin/
+
+## Images/DB dumps (optional; keep if you really need them)
+*.bak
+*.mdf
+*.ldf
+*.sqlite
+*.db
+*.dump
+*.tar
+*.tgz
+*.zip
+
+## MSBuild binary logs (if you generate them)
+*.binlog
