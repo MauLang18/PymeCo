@@ -13,11 +13,27 @@ public static class DependencyInjection
         IConfiguration config
     )
     {
-        services.AddDbContext<AppDbContext>(opt =>
-            opt.UseSqlServer(config.GetConnectionString("DefaultConnection"))
-        );
+        var provider = (config["Database:Provider"] ?? "SqlServer").Trim();
 
-        // Repositories (implementan interfaces de Application)
+        if (provider.Equals("InMemory", StringComparison.OrdinalIgnoreCase))
+        {
+            var dbName = config["Database:InMemoryName"] ?? "POS_TestDb";
+            services.AddDbContext<AppDbContext>(opt =>
+            {
+                opt.UseInMemoryDatabase(dbName);
+            });
+        }
+        else
+        {
+            var conn =
+                config.GetConnectionString("Default")
+                ?? throw new InvalidOperationException("Missing ConnectionStrings:Default");
+            services.AddDbContext<AppDbContext>(opt =>
+            {
+                opt.UseSqlServer(conn);
+            });
+        }
+
         services.AddScoped<IProductRepository, ProductRepository>();
         services.AddScoped<IClientRepository, ClientRepository>();
 
