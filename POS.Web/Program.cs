@@ -1,75 +1,76 @@
 using POS.Application;
 using POS.Infrastructure;
 using Serilog;
-using Serilog.Formatting.Compact;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1) Configurar Serilog ANTES de construir el host
+// Serilog first
 Log.Logger = new LoggerConfiguration()
-    .ReadFrom.Configuration(builder.Configuration) // lee Serilog de appsettings.*
+    .ReadFrom.Configuration(builder.Configuration)
     .Enrich.FromLogContext()
     .Enrich.WithMachineName()
     .Enrich.WithEnvironmentName()
     .CreateLogger();
 
-builder.Host.UseSerilog(); // reemplaza el logger nativo
+builder.Host.UseSerilog();
 
-// 2) Servicios
+// Configuration (includes Testing)
+builder
+    .Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+    .AddJsonFile(
+        $"appsettings.{builder.Environment.EnvironmentName}.json",
+        optional: true,
+        reloadOnChange: true
+    )
+    .AddJsonFile("appsettings.Testing.json", optional: true, reloadOnChange: true)
+    .AddEnvironmentVariables();
+
+// Services
 builder.Services.AddControllersWithViews();
-
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy(
-        "AllowAll",
-        policy => policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()
-    );
+    options.AddPolicy("AllowAll", p => p.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
 });
 
-// Tus capas
+// Register layers
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
 var app = builder.Build();
 
-// 3) Middlewares / pipeline
+// Testing flag (used to relax pipeline under test host)
+var isTesting = app.Environment.IsEnvironment("Testing");
+
+// Middleware pipeline
 if (app.Environment.IsDevelopment())
 {
-    // Página de errores con detalles
     app.UseDeveloperExceptionPage();
 }
-else
+else if (!isTesting)
 {
-    // Manejo global de excepciones
     app.UseExceptionHandler("/error");
     app.UseHsts();
 }
 
-// Para códigos de estado (404/403/etc.)
-app.UseStatusCodePagesWithReExecute("/errors/{0}");
+if (!isTesting)
+{
+    app.UseHttpsRedirection();
+}
 
-// Log de cada request HTTP (Serilog)
+app.UseStatusCodePagesWithReExecute("/errors/{0}");
 app.UseSerilogRequestLogging(opts =>
 {
-    // Mensaje por request
     opts.MessageTemplate =
         "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
-    // Puedes agregar aquí filtros si quieres excluir health checks, etc.
 });
 
-app.UseHttpsRedirection();
 app.UseStaticFiles();
-
 app.UseRouting();
-
 app.UseCors("AllowAll");
-
 app.UseAuthorization();
 
-// Ruta por defecto (ajústala a tu Home o a Products/Clients)
 app.MapControllerRoute(name: "default", pattern: "{controller=Home}/{action=Index}/{id?}");
 
-// 4) Arranque + Flush de logs
 try
 {
     Log.Information("Starting POS.Web");
@@ -83,3 +84,6 @@ finally
 {
     Log.CloseAndFlush();
 }
+
+// Required for WebApplicationFactory<T>
+public partial class Program { }

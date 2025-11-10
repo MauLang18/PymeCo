@@ -1,6 +1,4 @@
-using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
-using POS.Web.Models;
 
 namespace POS.Web.Controllers;
 
