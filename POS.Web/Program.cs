@@ -1,6 +1,7 @@
-using POS.Application;
+﻿using POS.Application;
 using POS.Infrastructure;
 using Serilog;
+using System.IO;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,6 +28,7 @@ builder
 
 // Services
 builder.Services.AddControllersWithViews();
+builder.Services.AddInfrastructure(builder.Configuration); // ⬅️ (una sola vez)
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", p => p.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
@@ -34,7 +36,7 @@ builder.Services.AddCors(options =>
 
 // Register layers
 builder.Services.AddApplication();
-builder.Services.AddInfrastructure(builder.Configuration);
+// builder.Services.AddInfrastructure(builder.Configuration); // ⬅️ eliminado el duplicado
 
 var app = builder.Build();
 
@@ -68,6 +70,9 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseCors("AllowAll");
 app.UseAuthorization();
+
+// Ensure the uploads folder exists
+Directory.CreateDirectory(Path.Combine(app.Environment.WebRootPath!, "uploads", "products"));
 
 app.MapControllerRoute(name: "default", pattern: "{controller=Home}/{action=Index}/{id?}");
 
