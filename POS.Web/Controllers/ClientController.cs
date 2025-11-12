@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using POS.Application.DTOs;
 using POS.Application.Interfaces;
 
