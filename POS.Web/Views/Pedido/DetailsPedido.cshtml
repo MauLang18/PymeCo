@@ -1,68 +1,61 @@
-﻿@model POS.Domain.Entities.Pedido
+﻿@model POS.Application.DTOs.PedidoDto
 @{
     ViewData["Title"] = $"Pedido #{Model.Id}";
 }
 
-<h2 class="mb-3">Pedido #@Model.Id</h2>
-
-<dl class="row">
-    <dt class="col-sm-2">Cliente</dt>
-    <dd class="col-sm-10">@Model.Cliente?.Name (@Model.ClienteId)</dd>
-
-    <dt class="col-sm-2">Usuario</dt>
-    <dd class="col-sm-10">@Model.Usuario?.Nombre (@Model.UsuarioId)</dd>
-
-    <dt class="col-sm-2">Fecha</dt>
-    <dd class="col-sm-10">@Model.Fecha.ToString("yyyy-MM-dd HH:mm")</dd>
-
-    <dt class="col-sm-2">Estado</dt>
-    <dd class="col-sm-10">@Model.Estado</dd>
-</dl>
-
-<h5>Detalles</h5>
-
-@if (Model.Detalles is null || !Model.Detalles.Any())
-{
-    <div class="alert alert-info">Sin detalles.</div>
-}
-else
-{
-    <div class="table-responsive">
-        <table class="table table-sm table-striped align-middle">
-            <thead>
-                <tr>
-                    <th>ProductoId</th>
-                    <th>Cantidad</th>
-                    <th>Precio Unit.</th>
-                    <th>Desc. %</th>
-                    <th>Imp. %</th>
-                    <th>Total Línea</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var d in Model.Detalles.OrderBy(x => x.Id))
-                {
-                    <tr>
-                        <td>@d.ProductoId</td>
-                        <td>@d.Cantidad</td>
-                        <td>@d.PrecioUnit.ToString("N2")</td>
-                        <td>@d.Descuento.ToString("N2")</td>
-                        <td>@d.ImpuestoPorc.ToString("N2")</td>
-                        <td>@d.TotalLinea.ToString("N2")</td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+<div class="max-w-7xl mx-auto space-y-6">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-xl font-semibold text-gray-900">Pedido #@Model.Id</h1>
+            <p class="text-sm text-gray-500">Resumen y detalle del pedido.</p>
+        </div>
+        <div class="flex gap-2">
+            <a asp-action="EditPedido" asp-route-id="@Model.Id" class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-gray-700 hover:bg-gray-50">
+                <i data-lucide="pencil" class="w-4 h-4"></i> Editar
+            </a>
+            <a asp-action="Index" class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-gray-700 hover:bg-gray-100">Volver</a>
+        </div>
     </div>
-}
 
-<div class="mt-3">
-    <p><strong>Subtotal:</strong> @Model.Subtotal.ToString("N2")</p>
-    <p><strong>Impuestos:</strong> @Model.Impuestos.ToString("N2")</p>
-    <p class="fs-5"><strong>Total:</strong> @Model.Total.ToString("N2")</p>
-</div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="rounded-xl border border-gray-200 bg-white p-4">
+            <h3 class="text-sm font-semibold text-gray-700 mb-3">Información</h3>
+            <dl class="grid grid-cols-3 gap-y-2 text-sm">
+                <dt class="text-gray-500">Cliente</dt>
+                <dd class="col-span-2">@Model.ClienteNombre ?? ("Cliente " + Model.ClienteId)</dd>
+                <dt class="text-gray-500">Usuario</dt>
+                <dd class="col-span-2">@Model.UsuarioNombre ?? ("Usuario " + Model.UsuarioId)</dd>
+                <dt class="text-gray-500">Fecha</dt>
+                <dd class="col-span-2">@Model.Fecha.ToString("dd/MM/yyyy HH:mm")</dd>
+                <dt class="text-gray-500">Estado</dt>
+                <dd class="col-span-2">
+                    @{
+                        string badge = Model.EstadoPedido switch
+                        {
+                            "Pagado" => "bg-green-100 text-green-800",
+                            "Anulado" => "bg-red-100 text-red-700",
+                            _ => "bg-gray-100 text-gray-700"
+                        };
+                    }
+                    <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium @badge">@Model.EstadoPedido</span>
+                </dd>
+            </dl>
+        </div>
 
-<div class="mt-3">
-    <a asp-action="EditPedido" asp-route-id="@Model.Id" class="btn btn-primary">Editar</a>
-    <a asp-action="ListPedido" class="btn btn-outline-secondary">Volver</a>
+        <div class="rounded-xl border border-gray-200 bg-white p-4">
+            <h3 class="text-sm font-semibold text-gray-700 mb-3">Totales</h3>
+            <div class="space-y-2 text-sm">
+                <div class="flex justify-between"><span class="text-gray-500">Subtotal</span><span>@Model.Subtotal.ToString("N2")</span></div>
+                <div class="flex justify-between"><span class="text-gray-500">Impuestos</span><span>@Model.Impuestos.ToString("N2")</span></div>
+                <div class="border-t pt-2 flex justify-between">
+                    <span class="font-semibold">Total</span><span class="font-bold">@Model.Total.ToString("N2")</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div>
+        <h3 class="text-sm font-semibold text-gray-700 mb-3">Detalles</h3>
+        @await Html.PartialAsync("_TablaDetalles", Model.Detalles?.OrderBy(d => d.Id) ?? Enumerable.Empty<POS.Application.DTOs.PedidoDetalleDto>())
+    </div>
 </div>

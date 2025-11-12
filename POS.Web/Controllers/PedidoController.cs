@@ -1,213 +1,220 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Logging;
 using POS.Application.DTOs;
 using POS.Application.Interfaces;
+using POS.Domain.Entities;
+using System.Linq;
+using System.Security.Claims;
+using System.Threading;
+using System.Threading.Tasks;
+using System;
+using System.Collections.Generic;
 
-namespace POS.Web.Controllers;
-
-[AutoValidateAntiforgeryToken]
-public class PedidoController : Controller
+namespace POS.Web.Controllers
 {
-    private readonly IPedidoService _service;
-    private readonly ILogger<PedidoController> _logger;
-
-    public PedidoController(IPedidoService service, ILogger<PedidoController> logger)
+    public class PedidoController : Controller
     {
-        _service = service;
-        _logger = logger;
-    }
+        private readonly IPedidoService _pedidoService;
+        private readonly IClientService _clientService;
+        private readonly IProductService _productService;
+        private readonly ILogger<PedidoController> _logger;
 
-    // LIST
-    [HttpGet]
-    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-    public async Task<IActionResult> ListPedido(string? estado, CancellationToken ct)
-    {
-        _logger.LogInformation("GET ListPedido started. Estado={Estado}", estado);
-        var items = await _service.ListAsync(estado, ct);
-        var count = items?.Count ?? 0;
-        _logger.LogInformation("GET ListPedido completed. Returned {Count} items", count);
-        return View("ListPedido", items);
-    }
-
-    // CREATE (GET)
-    [HttpGet]
-    public IActionResult CreatePedido()
-    {
-        _logger.LogInformation("GET CreatePedido view requested");
-        return View("CreatePedido", new PedidoDto());
-    }
-
-    // CREATE (POST)
-    [HttpPost]
-    public async Task<IActionResult> CreatePedido(PedidoDto dto, CancellationToken ct)
-    {
-        if (!ModelState.IsValid)
+        public PedidoController(
+            IPedidoService pedidoService,
+            IClientService clientService,
+            IProductService productService,
+            ILogger<PedidoController> logger)
         {
-            _logger.LogWarning("POST CreatePedido invalid model. Errors={Errors}", ModelState.ErrorCount);
+            _pedidoService = pedidoService;
+            _clientService = clientService;
+            _productService = productService;
+            _logger = logger;
+        }
+
+        // ---------- Helpers ----------
+        private async Task CargarCombosAsync(int? clienteSelected = null)
+        {
+            var clientes = await _clientService.ListAsync();
+            var productos = await _productService.ListAsync();
+
+            ViewBag.Clientes = new SelectList(clientes, "Id", "Name", clienteSelected);
+            ViewBag.Productos = new SelectList(productos, "Id", "Name");
+        }
+
+        private int GetUsuarioIdActual()
+        {
+            var claim = User.FindFirstValue("UsuarioId") ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+            return int.TryParse(claim, out var id) ? id : 1;
+        }
+
+        private static PedidoDto MapToDto(Pedido p)
+        {
+            return new PedidoDto
+            {
+                Id = p.Id,
+                ClienteId = p.ClienteId,
+                ClienteNombre = p.Cliente?.Name,
+                UsuarioId = p.UsuarioId,
+                UsuarioNombre = p.Usuario?.Nombre,
+                Fecha = p.Fecha,
+                Subtotal = p.Subtotal,
+                Impuestos = p.Impuestos,
+                Total = p.Total,
+                EstadoPedido = p.Estado,
+                Detalles = p.Detalles?.OrderBy(d => d.Id).Select(d => new PedidoDetalleDto
+                {
+                    Id = d.Id,
+                    ProductoId = d.ProductoId,
+                    ProductoNombre = d.Producto?.Name,
+                    Cantidad = d.Cantidad,
+                    PrecioUnitario = d.PrecioUnit,
+                    DescuentoPorc = d.Descuento,
+                    ImpuestoPorc = d.ImpuestoPorc,
+                    TotalLinea = d.TotalLinea
+                }).ToList() ?? new()
+            };
+        }
+
+        private void LogModelStateErrors()
+        {
+            if (ModelState.IsValid) return;
+            foreach (var kv in ModelState)
+            {
+                var key = kv.Key;
+                var state = kv.Value;
+                foreach (var error in state.Errors)
+                {
+                    _logger.LogWarning("ModelState error in {Key}: {Error}", key, error.ErrorMessage);
+                }
+            }
+        }
+
+        // ---------- List ----------
+        public async Task<IActionResult> Index(string estado, CancellationToken ct)
+        {
+            var filtro = string.IsNullOrWhiteSpace(estado) ? null : estado;
+            var entities = await _pedidoService.ListAsync(filtro, ct);
+            var listDto = entities.Select(MapToDto).ToList();
+            return View("ListPedido", listDto);
+        }
+
+        // ---------- Details ----------
+        [HttpGet]
+        public async Task<IActionResult> DetailsPedido(int id, CancellationToken ct)
+        {
+            var entity = await _pedidoService.GetByIdAsync(id, ct);
+            if (entity == null) return NotFound();
+            return View("DetailsPedido", MapToDto(entity));
+        }
+
+        // ---------- Create ----------
+        [HttpGet]
+        public async Task<IActionResult> CreatePedido()
+        {
+            await CargarCombosAsync();
+            var dto = new PedidoDto
+            {
+                UsuarioId = GetUsuarioIdActual(),
+                EstadoPedido = "Pendiente"
+            };
             return View("CreatePedido", dto);
         }
 
-        _logger.LogInformation("POST CreatePedido started");
-        var id = await _service.CreateAsync(dto, ct);
-        _logger.LogInformation("POST CreatePedido succeeded. Created Id={Id}", id);
-        return RedirectToAction(nameof(DetailsPedido), new { id });
-    }
-
-    // EDIT (GET)
-    [HttpGet]
-    public async Task<IActionResult> EditPedido(int id, CancellationToken ct)
-    {
-        _logger.LogInformation("GET EditPedido started. Id={Id}", id);
-        var entity = await _service.GetByIdAsync(id, ct);
-        if (entity is null)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreatePedido(PedidoDto dto, CancellationToken ct)
         {
-            _logger.LogWarning("GET EditPedido NotFound. Id={Id}", id);
-            return NotFound();
+            dto.UsuarioId = GetUsuarioIdActual();
+            if (string.IsNullOrWhiteSpace(dto.EstadoPedido))
+                dto.EstadoPedido = "Pendiente";
+
+            if (!ModelState.IsValid)
+            {
+                LogModelStateErrors();
+                await CargarCombosAsync(dto.ClienteId);
+                return View("CreatePedido", dto);
+            }
+
+            try
+            {
+                var id = await _pedidoService.CreateAsync(dto, ct);
+                return RedirectToAction(nameof(DetailsPedido), new { id });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creando pedido");
+                ModelState.AddModelError("", "Ocurrió un error guardando el pedido.");
+                await CargarCombosAsync(dto.ClienteId);
+                return View("CreatePedido", dto);
+            }
         }
 
-        var dto = new PedidoDto
+        // ---------- Edit ----------
+        [HttpGet]
+        public async Task<IActionResult> EditPedido(int id, CancellationToken ct)
         {
-            ClienteId = entity.ClienteId,
-            UsuarioId = entity.UsuarioId,
-            Fecha = entity.Fecha,
-            Subtotal = entity.Subtotal,
-            Impuestos = entity.Impuestos,
-            Total = entity.Total,
-            EstadoPedido = entity.Estado
-        };
+            var entity = await _pedidoService.GetByIdAsync(id, ct);
+            if (entity == null) return NotFound();
+            var dto = MapToDto(entity);
 
-        ViewBag.PedidoId = id;
-        ViewData["Detalles"] = entity.Detalles?.OrderBy(d => d.Id).ToList() ?? new();
-
-        _logger.LogInformation("GET EditPedido loaded. Id={Id}", id);
-        return View("EditPedido", dto);
-    }
-
-    // EDIT (POST)
-    [HttpPost]
-    public async Task<IActionResult> EditPedido(int id, PedidoDto dto, CancellationToken ct)
-    {
-        if (!ModelState.IsValid)
-        {
-            _logger.LogWarning("POST EditPedido invalid model. Id={Id} Errors={Errors}", id, ModelState.ErrorCount);
-
-            ViewBag.PedidoId = id;
-            var current = await _service.GetByIdAsync(id, ct);
-            ViewData["Detalles"] = current?.Detalles?.OrderBy(d => d.Id).ToList() ?? new();
-
+            await CargarCombosAsync(dto.ClienteId);
             return View("EditPedido", dto);
         }
 
-        _logger.LogInformation("POST EditPedido started. Id={Id}", id);
-        await _service.UpdateAsync(id, dto, ct);
-        _logger.LogInformation("POST EditPedido succeeded. Id={Id}", id);
-        return RedirectToAction(nameof(DetailsPedido), new { id });
-    }
-
-    // DELETE (GET)
-    [HttpGet]
-    public async Task<IActionResult> DeletePedido(int id, CancellationToken ct)
-    {
-        _logger.LogInformation("GET DeletePedido confirmation. Id={Id}", id);
-        var entity = await _service.GetByIdAsync(id, ct);
-        if (entity is null)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditPedido(int id, PedidoDto dto, CancellationToken ct)
         {
-            _logger.LogWarning("GET DeletePedido NotFound. Id={Id}", id);
-            return NotFound();
+            if (id != dto.Id) return BadRequest();
+            dto.UsuarioId = GetUsuarioIdActual();
+            if (string.IsNullOrWhiteSpace(dto.EstadoPedido))
+                dto.EstadoPedido = "Pendiente";
+
+            if (!ModelState.IsValid)
+            {
+                LogModelStateErrors();
+                await CargarCombosAsync(dto.ClienteId);
+                return View("EditPedido", dto);
+            }
+
+            try
+            {
+                await _pedidoService.UpdateAsync(id, dto, ct);
+                return RedirectToAction(nameof(DetailsPedido), new { id });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error actualizando pedido {Id}", id);
+                ModelState.AddModelError("", "Ocurrió un error actualizando el pedido.");
+                await CargarCombosAsync(dto.ClienteId);
+                return View("EditPedido", dto);
+            }
         }
 
-        return View("DeletePedido", entity);
-    }
-
-    // DELETE (POST)
-    [HttpPost, ActionName("DeletePedido")]
-    public async Task<IActionResult> DeletePedidoConfirmed(int id, CancellationToken ct)
-    {
-        _logger.LogInformation("POST DeletePedidoConfirmed started. Id={Id}", id);
-        await _service.DeleteAsync(id, ct);
-        _logger.LogInformation("POST DeletePedidoConfirmed succeeded. Id={Id}", id);
-        return RedirectToAction(nameof(ListPedido));
-    }
-
-    // DETAILS
-    [HttpGet]
-    public async Task<IActionResult> DetailsPedido(int id, CancellationToken ct)
-    {
-        _logger.LogInformation("GET DetailsPedido started. Id={Id}", id);
-        var entity = await _service.GetByIdAsync(id, ct);
-        if (entity is null)
+        // ---------- Delete ----------
+        [HttpGet]
+        public async Task<IActionResult> DeletePedido(int id, CancellationToken ct)
         {
-            _logger.LogWarning("GET DetailsPedido NotFound. Id={Id}", id);
-            return NotFound();
+            var entity = await _pedidoService.GetByIdAsync(id, ct);
+            if (entity == null) return NotFound();
+            return View("DeletePedido", MapToDto(entity));
         }
 
-        _logger.LogInformation("GET DetailsPedido loaded. Id={Id}", id);
-        return View("DetailsPedido", entity);
-    }
-
-    // ADD detalle
-    [HttpPost]
-    public async Task<IActionResult> AddDetalle(int pedidoId, PedidoDetalleDto detalle, CancellationToken ct)
-    {
-        if (!ModelState.IsValid)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(int id, CancellationToken ct)
         {
-            _logger.LogWarning("POST AddDetalle invalid model. PedidoId={PedidoId} Errors={Errors}",
-                pedidoId, ModelState.ErrorCount);
-            return RedirectToAction(nameof(EditPedido), new { id = pedidoId });
+            try
+            {
+                await _pedidoService.DeleteAsync(id, ct);
+                return RedirectToAction(nameof(Index));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error eliminando pedido {Id}", id);
+                return RedirectToAction(nameof(DetailsPedido), new { id });
+            }
         }
-
-        _logger.LogInformation("POST AddDetalle started. PedidoId={PedidoId}", pedidoId);
-        await _service.AddDetalleAsync(pedidoId, detalle, ct);
-        _logger.LogInformation("POST AddDetalle succeeded. PedidoId={PedidoId}", pedidoId);
-
-        return RedirectToAction(nameof(EditPedido), new { id = pedidoId });
-    }
-
-    // UPDATE detalle
-    [HttpPost]
-    public async Task<IActionResult> UpdateDetalle(int detalleId, PedidoDetalleDto detalle, int pedidoId, CancellationToken ct)
-    {
-        if (!ModelState.IsValid)
-        {
-            _logger.LogWarning("POST UpdateDetalle invalid model. DetalleId={DetalleId} Errors={Errors}",
-                detalleId, ModelState.ErrorCount);
-            return RedirectToAction(nameof(EditPedido), new { id = pedidoId });
-        }
-
-        _logger.LogInformation("POST UpdateDetalle started. DetalleId={DetalleId}", detalleId);
-        await _service.UpdateDetalleAsync(detalleId, detalle, ct);
-        _logger.LogInformation("POST UpdateDetalle succeeded. DetalleId={DetalleId}", detalleId);
-
-        return RedirectToAction(nameof(EditPedido), new { id = pedidoId });
-    }
-
-    // REMOVE detalle
-    [HttpPost]
-    public async Task<IActionResult> RemoveDetalle(int detalleId, int pedidoId, CancellationToken ct)
-    {
-        _logger.LogInformation("POST RemoveDetalle started. DetalleId={DetalleId}", detalleId);
-        await _service.RemoveDetalleAsync(detalleId, ct);
-        _logger.LogInformation("POST RemoveDetalle succeeded. DetalleId={DetalleId}", detalleId);
-        return RedirectToAction(nameof(EditPedido), new { id = pedidoId });
-    }
-
-    // RECALCULAR totales
-    [HttpPost]
-    public async Task<IActionResult> Recalcular(int pedidoId, CancellationToken ct)
-    {
-        _logger.LogInformation("POST Recalcular started. PedidoId={PedidoId}", pedidoId);
-        await _service.RecalcularTotalesAsync(pedidoId, ct);
-        _logger.LogInformation("POST Recalcular completed. PedidoId={PedidoId}", pedidoId);
-        return RedirectToAction(nameof(EditPedido), new { id = pedidoId });
-    }
-
-    // CAMBIAR estado
-    [HttpPost]
-    public async Task<IActionResult> CambiarEstado(int pedidoId, string estado, CancellationToken ct)
-    {
-        _logger.LogInformation("POST CambiarEstado started. PedidoId={PedidoId} Estado={Estado}", pedidoId, estado);
-        await _service.CambiarEstadoAsync(pedidoId, estado, ct);
-        _logger.LogInformation("POST CambiarEstado succeeded. PedidoId={PedidoId} Estado={Estado}", pedidoId, estado);
-        return RedirectToAction(nameof(EditPedido), new { id = pedidoId });
     }
 }

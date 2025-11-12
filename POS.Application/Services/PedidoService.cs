@@ -1,194 +1,223 @@
-﻿using System.Linq;
-using POS.Application.DTOs;
+﻿using POS.Application.DTOs;
 using POS.Application.Interfaces;
 using POS.Domain.Entities;
 using POS.Infrastructure.Repositories;
 
-namespace POS.Application.Services;
-
-public class PedidoService : IPedidoService
+namespace POS.Application.Services
 {
-    private readonly IPedidoRepository _repo;
-
-    public PedidoService(IPedidoRepository repo) => _repo = repo;
-
-    public async Task<int> CreateAsync(PedidoDto dto, CancellationToken ct = default)
+    public class PedidoService : IPedidoService
     {
-        var entity = new Pedido
-        {
-            ClienteId = dto.ClienteId,
-            UsuarioId = dto.UsuarioId,
-            Fecha = dto.Fecha,
-            Estado = dto.EstadoPedido,
-        };
+        private readonly IPedidoRepository _repo;
 
-        if (dto.Detalles != null)
+        public PedidoService(IPedidoRepository repo)
         {
-            foreach (var d in dto.Detalles)
+            _repo = repo;
+        }
+
+        // -------------------- PEDIDO (HEADER) --------------------
+
+        public async Task<int> CreateAsync(PedidoDto dto, CancellationToken ct = default)
+        {
+            var entity = new Pedido
             {
-                entity.Detalles.Add(new PedidoDetalle
+                ClienteId = dto.ClienteId,
+                UsuarioId = dto.UsuarioId,
+                Fecha = DateTime.UtcNow,
+                Estado = string.IsNullOrWhiteSpace(dto.EstadoPedido) ? "Pendiente" : dto.EstadoPedido
+            };
+
+            if (dto.Detalles != null)
+            {
+                foreach (var d in dto.Detalles)
                 {
-                    ProductoId = d.ProductoId,
-                    Cantidad = d.Cantidad,
-                    PrecioUnit = d.PrecioUnitario,
-                    Descuento = d.DescuentoPorc,
-                    ImpuestoPorc = d.ImpuestoPorc,
-                    TotalLinea = d.TotalLinea
-                });
+                    entity.Detalles.Add(new PedidoDetalle
+                    {
+                        ProductoId = d.ProductoId,
+                        Cantidad = d.Cantidad,
+                        PrecioUnit = d.PrecioUnitario,
+                        Descuento = d.DescuentoPorc,
+                        ImpuestoPorc = d.ImpuestoPorc,
+                        TotalLinea = 0m 
+                    });
+                }
             }
+
+            Recalcular(entity);
+
+            await _repo.AddAsync(entity, ct);
+            await _repo.SaveChangesAsync(ct);
+            return entity.Id;
         }
 
-        Recalcular(entity);
-
-        await _repo.AddAsync(entity, ct);
-        await _repo.SaveChangesAsync(ct);
-
-        return entity.Id;
-    }
-
-    public async Task UpdateAsync(int id, PedidoDto dto, CancellationToken ct = default)
-    {
-        var entity = await _repo.GetByIdAsync(id, includeDetails: true, ct)
-                     ?? throw new KeyNotFoundException("Pedido no encontrado.");
-
-        entity.ClienteId = dto.ClienteId;
-        entity.UsuarioId = dto.UsuarioId;
-        entity.Estado = dto.EstadoPedido;
-
-        _repo.Update(entity);
-        Recalcular(entity);
-
-        await _repo.SaveChangesAsync(ct);
-    }
-
-    public async Task DeleteAsync(int id, CancellationToken ct = default)
-    {
-        var entity = await _repo.GetByIdAsync(id, includeDetails: false, ct)
-                     ?? throw new KeyNotFoundException("Pedido no encontrado.");
-
-        _repo.Remove(entity);
-        await _repo.SaveChangesAsync(ct);
-    }
-
-    public Task<Pedido?> GetByIdAsync(int id, CancellationToken ct = default) =>
-        _repo.GetByIdAsync(id, includeDetails: true, ct);
-
-    public Task<IReadOnlyList<Pedido>> ListAsync(string? estado = null, CancellationToken ct = default) =>
-        _repo.ListAsync(estado, ct);
-
-    public async Task<int> AddDetalleAsync(int pedidoId, PedidoDetalleDto d, CancellationToken ct = default)
-    {
-        var pedido = await _repo.GetByIdAsync(pedidoId, includeDetails: true, ct)
-                     ?? throw new KeyNotFoundException("Pedido no encontrado.");
-
-        var detalle = new PedidoDetalle
+        public async Task UpdateAsync(int id, PedidoDto dto, CancellationToken ct = default)
         {
-            PedidoId = pedidoId,
-            ProductoId = d.ProductoId,
-            Cantidad = d.Cantidad,
-            PrecioUnit = d.PrecioUnitario,
-            Descuento = d.DescuentoPorc,
-            ImpuestoPorc = d.ImpuestoPorc,
-            TotalLinea = d.TotalLinea
-        };
+            var entity = await _repo.GetByIdAsync(id, includeDetails: true, ct: ct);
+            if (entity == null) throw new KeyNotFoundException($"Pedido {id} no encontrado");
 
-        await _repo.AddDetalleAsync(detalle, ct);
-        await RecalcularTotalesAsync(pedidoId, ct);
+            entity.ClienteId = dto.ClienteId;
+            entity.UsuarioId = dto.UsuarioId;
+            entity.Estado = string.IsNullOrWhiteSpace(dto.EstadoPedido) ? entity.Estado : dto.EstadoPedido;
 
-        return detalle.Id;
-    }
-
-    public async Task UpdateDetalleAsync(int detalleId, PedidoDetalleDto d, CancellationToken ct = default)
-    {
-        var det = await _repo.GetDetalleByIdAsync(detalleId, ct)
-                  ?? throw new KeyNotFoundException("Detalle no encontrado.");
-
-        det.ProductoId = d.ProductoId;
-        det.Cantidad = d.Cantidad;
-        det.PrecioUnit = d.PrecioUnitario;
-        det.Descuento = d.DescuentoPorc;
-        det.ImpuestoPorc = d.ImpuestoPorc;
-        det.TotalLinea = d.TotalLinea;
-
-        _repo.UpdateDetalle(det);
-        await _repo.SaveChangesAsync(ct);
-
-        await RecalcularTotalesAsync(det.PedidoId, ct);
-    }
-
-    public async Task RemoveDetalleAsync(int detalleId, CancellationToken ct = default)
-    {
-        var det = await _repo.GetDetalleByIdAsync(detalleId, ct)
-                  ?? throw new KeyNotFoundException("Detalle no encontrado.");
-
-        var pedidoId = det.PedidoId;
-
-        _repo.RemoveDetalle(det);
-        await _repo.SaveChangesAsync(ct);
-
-        await RecalcularTotalesAsync(pedidoId, ct);
-    }
-
-    public async Task RecalcularTotalesAsync(int pedidoId, CancellationToken ct = default)
-    {
-        var pedido = await _repo.GetByIdAsync(pedidoId, includeDetails: true, ct)
-                     ?? throw new KeyNotFoundException("Pedido no encontrado.");
-
-        Recalcular(pedido);
-        _repo.Update(pedido);
-        await _repo.SaveChangesAsync(ct);
-    }
-
-    public async Task CambiarEstadoAsync(int pedidoId, string nuevoEstado, CancellationToken ct = default)
-    {
-        var pedido = await _repo.GetByIdAsync(pedidoId, includeDetails: false, ct)
-                     ?? throw new KeyNotFoundException("Pedido no encontrado.");
-
-        pedido.Estado = nuevoEstado;
-
-        _repo.Update(pedido);
-        await _repo.SaveChangesAsync(ct);
-    }
-
-    private static void Recalcular(Pedido p)
-    {
-        if (p.Detalles == null || p.Detalles.Count == 0)
-        {
-            p.Subtotal = 0;
-            p.Impuestos = 0;
-            p.Total = 0;
-            return;
-        }
-
-        foreach (var d in p.Detalles)
-        {
-            if (d.TotalLinea <= 0)
+            entity.Detalles.Clear();
+            if (dto.Detalles != null)
             {
-                var bruto = d.PrecioUnit * d.Cantidad;
-                var descMonto = bruto * (d.Descuento / 100m);
-                var baseLinea = bruto - descMonto;
-                var imp = baseLinea * (d.ImpuestoPorc / 100m);
-                d.TotalLinea = decimal.Round(baseLinea + imp, 2);
+                foreach (var d in dto.Detalles)
+                {
+                    entity.Detalles.Add(new PedidoDetalle
+                    {
+                        ProductoId = d.ProductoId,
+                        Cantidad = d.Cantidad,
+                        PrecioUnit = d.PrecioUnitario,
+                        Descuento = d.DescuentoPorc,
+                        ImpuestoPorc = d.ImpuestoPorc,
+                        TotalLinea = 0m
+                    });
+                }
             }
+
+            Recalcular(entity);
+
+            _repo.Update(entity);
+            await _repo.SaveChangesAsync(ct);
         }
 
-        var subtotal = p.Detalles.Sum(d =>
+        public async Task DeleteAsync(int id, CancellationToken ct = default)
         {
-            var bruto = d.PrecioUnit * d.Cantidad;
-            var descMonto = bruto * (d.Descuento / 100m);
-            return bruto - descMonto;
-        });
+            var entity = await _repo.GetByIdAsync(id, includeDetails: false, ct: ct);
+            if (entity == null) return;
 
-        var impuestos = p.Detalles.Sum(d =>
+            _repo.Remove(entity);
+            await _repo.SaveChangesAsync(ct);
+        }
+
+        public async Task<Pedido?> GetByIdAsync(int id, CancellationToken ct = default)
+            => await _repo.GetByIdAsync(id, includeDetails: true, ct: ct);
+
+        public async Task<IReadOnlyList<Pedido>> ListAsync(string? estado = null, CancellationToken ct = default)
         {
-            var bruto = d.PrecioUnit * d.Cantidad;
-            var descMonto = bruto * (d.Descuento / 100m);
-            var baseLinea = bruto - descMonto;
-            return baseLinea * (d.ImpuestoPorc / 100m);
-        });
+            return await _repo.ListAsync(estado, ct);
+        }
 
-        p.Subtotal = decimal.Round(subtotal, 2);
-        p.Impuestos = decimal.Round(impuestos, 2);
-        p.Total = decimal.Round(p.Subtotal + p.Impuestos, 2);
+        // -------------------- DETALLES --------------------
+
+        public async Task<int> AddDetalleAsync(int pedidoId, PedidoDetalleDto detalle, CancellationToken ct = default)
+        {
+            var pedido = await _repo.GetByIdAsync(pedidoId, includeDetails: true, ct: ct);
+            if (pedido == null) throw new KeyNotFoundException($"Pedido {pedidoId} no encontrado");
+
+            var det = new PedidoDetalle
+            {
+                PedidoId = pedidoId,
+                ProductoId = detalle.ProductoId,
+                Cantidad = detalle.Cantidad,
+                PrecioUnit = detalle.PrecioUnitario,
+                Descuento = detalle.DescuentoPorc,
+                ImpuestoPorc = detalle.ImpuestoPorc,
+                TotalLinea = 0m
+            };
+
+            pedido.Detalles.Add(det);
+            Recalcular(pedido);
+
+            _repo.Update(pedido);
+            await _repo.SaveChangesAsync(ct);
+
+            return det.Id;
+        }
+
+        public async Task UpdateDetalleAsync(int detalleId, PedidoDetalleDto detalle, CancellationToken ct = default)
+        {
+            var det = await _repo.GetDetalleByIdAsync(detalleId, ct);
+            if (det == null) throw new KeyNotFoundException($"Detalle {detalleId} no encontrado");
+
+            det.ProductoId = detalle.ProductoId;
+            det.Cantidad = detalle.Cantidad;
+            det.PrecioUnit = detalle.PrecioUnitario;
+            det.Descuento = detalle.DescuentoPorc;
+            det.ImpuestoPorc = detalle.ImpuestoPorc;
+            det.TotalLinea = 0m;
+
+            _repo.UpdateDetalle(det);
+
+            var pedido = await _repo.GetByIdAsync(det.PedidoId, includeDetails: true, ct: ct);
+            if (pedido != null)
+            {
+                Recalcular(pedido);
+                _repo.Update(pedido);
+            }
+
+            await _repo.SaveChangesAsync(ct);
+        }
+
+        public async Task RemoveDetalleAsync(int detalleId, CancellationToken ct = default)
+        {
+            var det = await _repo.GetDetalleByIdAsync(detalleId, ct);
+            if (det == null) return;
+
+            var pedidoId = det.PedidoId;
+
+            _repo.RemoveDetalle(det);
+
+            var pedido = await _repo.GetByIdAsync(pedidoId, includeDetails: true, ct: ct);
+            if (pedido != null)
+            {
+                var match = pedido.Detalles.FirstOrDefault(x => x.Id == detalleId);
+                if (match != null) pedido.Detalles.Remove(match);
+
+                Recalcular(pedido);
+                _repo.Update(pedido);
+            }
+
+            await _repo.SaveChangesAsync(ct);
+        }
+
+        // -------------------- UTILIDADES --------------------
+
+        public async Task RecalcularTotalesAsync(int pedidoId, CancellationToken ct = default)
+        {
+            var pedido = await _repo.GetByIdAsync(pedidoId, includeDetails: true, ct: ct);
+            if (pedido == null) throw new KeyNotFoundException($"Pedido {pedidoId} no encontrado");
+
+            Recalcular(pedido);
+            _repo.Update(pedido);
+            await _repo.SaveChangesAsync(ct);
+        }
+
+        public async Task CambiarEstadoAsync(int pedidoId, string nuevoEstado, CancellationToken ct = default)
+        {
+            var pedido = await _repo.GetByIdAsync(pedidoId, includeDetails: false, ct: ct);
+            if (pedido == null) throw new KeyNotFoundException($"Pedido {pedidoId} no encontrado");
+
+            if (!string.IsNullOrWhiteSpace(nuevoEstado))
+                pedido.Estado = nuevoEstado.Trim();
+
+            _repo.Update(pedido);
+            await _repo.SaveChangesAsync(ct);
+        }
+
+        // -------------------- Cálculo de totales --------------------
+
+        private static void Recalcular(Pedido p)
+        {
+            decimal subtotal = 0m, impuestos = 0m, total = 0m;
+
+            foreach (var d in p.Detalles)
+            {
+                var bruto = d.Cantidad * d.PrecioUnit;
+                var conDesc = bruto * (1 - (d.Descuento / 100m));
+                var totLn = conDesc * (1 + (d.ImpuestoPorc / 100m));
+                var impMon = totLn - conDesc;
+
+                d.TotalLinea = Math.Round(totLn, 2, MidpointRounding.AwayFromZero);
+
+                subtotal += (totLn - impMon);
+                impuestos += impMon;
+                total += totLn;
+            }
+
+            p.Subtotal = Math.Round(subtotal, 2, MidpointRounding.AwayFromZero);
+            p.Impuestos = Math.Round(impuestos, 2, MidpointRounding.AwayFromZero);
+            p.Total = Math.Round(total, 2, MidpointRounding.AwayFromZero);
+        }
     }
 }
