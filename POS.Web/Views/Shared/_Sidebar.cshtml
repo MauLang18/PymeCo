@@ -65,18 +65,5 @@
         </nav>
     </div>
 
-    <!-- Botones de sesión -->
-    <div class="flex flex-col gap-3 p-4">
-        @if (!SignInManager.IsSignedIn(User))
-        {
-            <a href="@Url.Action("Signup", "Auth")"
-               class="bg-[color:var(--primary)] text-white py-2 rounded-full text-center hover:bg-[color:var(--primary-dark)] transition-colors">
-                Sign Up
-            </a>
-            <a href="@Url.Action("Login", "Auth")"
-               class="border border-[color:var(--primary)] text-[color:var(--primary)] py-2 rounded-full text-center hover:bg-[color:var(--primary)] hover:text-white transition-colors">
-                Log In
-            </a>
-        }
-    </div>
+   
 </aside>
