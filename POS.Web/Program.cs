@@ -71,7 +71,6 @@ app.UseAuthorization();
 
 app.MapControllerRoute(name: "default", pattern: "{controller=Home}/{action=Index}/{id?}");
 
-// 4) Arranque + Flush de logs
 try
 {
     Log.Information("Starting POS.Web");

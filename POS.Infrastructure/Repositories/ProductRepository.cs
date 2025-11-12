@@ -22,25 +22,28 @@ public class ProductRepository : IProductRepository
         _db.Products.FirstOrDefaultAsync(p => p.Id == id, ct);
 
     public async Task<IReadOnlyList<Product>> ListAsync(
-        string? search = null,
-        CancellationToken ct = default
-    )
+    string? search = null, CancellationToken ct = default)
     {
-        // solo lectura y solo productos mostrables
-        var q = _db.Products.AsNoTracking()
-            .Where(p => p.Status == POS.Domain.Enums.ProductStatus.Active && p.Stock > 0);
+        var q = _db.Products.AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(search))
         {
             var term = search.Trim();
-            q = q.Where(p => p.Name.Contains(term));
+            // Para buscador (dropdown): solo activos con stock y máx. 10
+            q = q.Where(p => p.Status == ProductStatus.Active
+                          && p.Stock > 0
+                          && p.Name.Contains(term))
+                 .OrderBy(p => p.Name)
+                 .Take(10);
+        }
+        else
+        {
+            // Para la página de listado: muestra todos, ordenados
+            q = q.OrderBy(p => p.Name);
+            // q = q.Where(p => p.Status == ProductStatus.Active).OrderBy(p => p.Name);
         }
 
-        // Orden + TOP 10
-        return await q
-            .OrderBy(p => p.Name)
-            .Take(10)
-            .ToListAsync(ct);
+        return await q.ToListAsync(ct);
     }
 
     public Task<bool> ExistsByNameAsync(string name, CancellationToken ct = default) =>
