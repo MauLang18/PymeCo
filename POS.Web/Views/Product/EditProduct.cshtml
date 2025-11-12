@@ -5,11 +5,9 @@
     ViewBag.Title = "Edit Product";
     Layout = "~/Views/Shared/_Layout.cshtml";
 
-    // 1) Tomar id desde ViewBag si lo puso el GET
     int productId = 0;
     if (ViewBag.ProductId is int vbId) productId = vbId;
 
-    // 2) Si no vino en ViewBag, intentar desde la ruta actual
     if (productId == 0)
     {
         var routeIdObj = ViewContext.RouteData.Values["id"];
@@ -28,7 +26,9 @@
           asp-controller="Product"
           asp-route-id="@productId"
           method="post"
-          class="space-y-6">
+          class="space-y-6"
+          enctype="multipart/form-data">
+        <!-- necesario para subir archivo -->
         @Html.AntiForgeryToken()
 
         @* Redundancia intencional: además de ir en la URL, envío el id en el body *@
@@ -73,10 +73,10 @@
             </div>
 
             <div class="sm:col-span-2">
-                <label asp-for="ImageUrl" class="block text-sm font-medium text-[color:var(--txt-secondary)] mb-2"></label>
-                <input asp-for="ImageUrl" type="url" maxlength="400" placeholder="https://..."
-                       class="w-full border border-[color:var(--border)] rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[color:var(--primary)]" />
-                <span asp-validation-for="ImageUrl" class="text-[color:var(--error)] text-sm"></span>
+                @* Mostrar la URL actual sin ligarla para evitar validación de navegador *@
+                <label class="block text-sm font-medium text-[color:var(--txt-secondary)] mb-2">Current image URL</label>
+                <input value="@Model.ImageUrl" readonly
+                       class="w-full border border-[color:var(--border)] rounded-xl px-4 py-2.5 bg-[color:var(--light-bg)] text-[color:var(--txt-secondary)]" />
 
                 @if (!string.IsNullOrWhiteSpace(Model.ImageUrl))
                 {
@@ -84,6 +84,16 @@
                         <img src="@Model.ImageUrl" alt="@Model.Name" class="w-20 h-20 rounded-lg object-cover border border-[color:var(--border)]" />
                     </div>
                 }
+            </div>
+
+            <div class="sm:col-span-2">
+                <label asp-for="ImageFile" class="block text-sm font-medium text-[color:var(--txt-secondary)] mb-2"></label>
+                <input asp-for="ImageFile" type="file" accept="image/*"
+                       class="w-full border border-[color:var(--border)] rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[color:var(--primary)]" />
+                <span asp-validation-for="ImageFile" class="text-[color:var(--error)] text-sm"></span>
+
+                @* Mantener/transportar ImageUrl si no adjuntan nuevo archivo *@
+                <input asp-for="ImageUrl" type="hidden" />
             </div>
 
             <div class="sm:col-span-2">
@@ -111,4 +121,3 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
 }
-

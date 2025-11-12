@@ -4,6 +4,7 @@ using POS.Domain.Entities;
 using POS.Infrastructure;
 using POS.Infrastructure.Persistence;
 using Serilog;
+using System.IO;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,7 +31,7 @@ builder.Services.AddCors(options =>
 
 // Tus capas
 builder.Services.AddApplication();
-builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddInfrastructure(builder.Configuration); // ⬅️ eliminado el duplicado
 
 // ========== CONFIGURACIÓN DE IDENTITY ==========
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
@@ -105,6 +106,9 @@ app.UseCors("AllowAll");
 // ⚠️ IMPORTANTE: El orden es crítico
 app.UseAuthentication(); // Primero autenticación
 app.UseAuthorization();  // Luego autorización
+
+// Ensure the uploads folder exists
+Directory.CreateDirectory(Path.Combine(app.Environment.WebRootPath!, "uploads", "products"));
 
 app.MapControllerRoute(name: "default", pattern: "{controller=Home}/{action=Index}/{id?}");
 

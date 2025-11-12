@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using POS.Application.DTOs;
 using POS.Application.Interfaces;
 using POS.Domain.Enums;
+using POS.Infrastructure.FileStorage;
 
 namespace POS.Web.Controllers;
 
@@ -18,11 +19,12 @@ public class ProductController : Controller
 {
     private readonly IProductService _service;
     private readonly ILogger<ProductController> _logger;
+    private readonly IFileStorageLocal _files;
 
-    public ProductController(IProductService service, ILogger<ProductController> logger)
-    {
+    public ProductController(IProductService service, ILogger<ProductController> logger, IFileStorageLocal files) {
         _service = service;
         _logger = logger;
+        _files = files;
     }
 
     /// <summary>
@@ -66,6 +68,12 @@ public class ProductController : Controller
         }
 
         _logger.LogInformation("POST CreateProduct started");
+
+        if (dto.ImageFile is { Length: > 0 })
+        {
+            dto.ImageUrl = await _files.SaveAsync(dto.ImageFile, "products");
+        }
+
         var id = await _service.CreateAsync(dto, ct);
         _logger.LogInformation("POST CreateProduct succeeded. Created Id={Id}", id);
         return RedirectToAction(nameof(DetailsProduct), new { id });
@@ -119,6 +127,24 @@ public class ProductController : Controller
         }
 
         _logger.LogInformation("POST EditProduct started. Id={Id}", id);
+
+        var current = await _service.GetByIdAsync(id, ct);
+        if (current is null)
+        {
+            _logger.LogWarning("POST EditProduct NotFound on fetch. Id={Id}", id);
+            return NotFound();
+        }
+
+        if (dto.ImageFile is { Length: > 0 })
+        {
+            // Opcional: borrar la imagen anterior con _files.DeleteAsync(current.ImageUrl);
+            dto.ImageUrl = await _files.SaveAsync(dto.ImageFile, "products");
+        }
+        else
+        {
+            dto.ImageUrl ??= current.ImageUrl;
+        }
+
         await _service.UpdateAsync(id, dto, ct);
         _logger.LogInformation("POST EditProduct succeeded. Id={Id}", id);
         return RedirectToAction(nameof(DetailsProduct), new { id });

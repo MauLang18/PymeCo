@@ -8,9 +8,10 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
-        // Services (casos de uso)
+        // Services (casos de uso)TargetFramework
         services.AddScoped<IProductService, ProductService>();
         services.AddScoped<IClientService, ClientService>();
+        services.AddScoped<IPedidoService, PedidoService>();
 
         // Si usas AutoMapper/FluentValidation/MediatR, agrégalos aquí.
         // services.AddAutoMapper(typeof(DependencyInjection).Assembly);

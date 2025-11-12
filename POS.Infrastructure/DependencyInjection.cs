@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using POS.Infrastructure.FileStorage;
 using POS.Infrastructure.Persistence;
 using POS.Infrastructure.Repositories;
 
@@ -36,6 +37,8 @@ public static class DependencyInjection
 
         services.AddScoped<IProductRepository, ProductRepository>();
         services.AddScoped<IClientRepository, ClientRepository>();
+        services.AddScoped<IPedidoRepository, PedidoRepository>();
+        services.AddSingleton<IFileStorageLocal, FileStorageLocal>();
 
         return services;
     }

@@ -13,15 +13,29 @@
     </div>
 
     <!-- Center: Search -->
-    <div class="flex items-center w-1/3">
-        <div class="relative w-full">
-            <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4"></i>
-            <input type="text" placeholder="Buscar productos, clientes, pedidos..."
-                   class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)]" />
-        </div>
+    <div id="globalSearchBox" class="flex items-center w-1/3 relative">
+        <form id="globalSearchForm"
+              action="@Url.Action("ListProduct", "Product")"
+              method="get"
+              class="relative w-full">
+            <i data-lucide="search"
+               class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4"></i>
+
+            <input id="globalSearch"
+                   name="q"
+                   type="text"
+                   autocomplete="off"
+                   placeholder="Buscar productos…"
+                   class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full
+                      focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)]" />
+
+            <ul id="globalSearchList" role="listbox"
+                class="hidden absolute top-full mt-1 left-0 right-0 bg-white border
+                   border-gray-200 rounded-lg shadow z-50 max-h-72 overflow-auto"></ul>
+        </form>
     </div>
 
-    <!-- Right: Icons + User -->
+    <!-- Right -->
     <div class="flex items-center gap-4">
         @if (SignInManager.IsSignedIn(User))
         {
@@ -67,7 +81,7 @@
                     <form asp-controller="Auth" asp-action="Logout" method="post" class="w-full">
                         <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2">
                             <i data-lucide="log-out" class="w-4 h-4"></i>
-                            Cerrar Sesión
+                            Cerrar SesiÃ³n
                         </button>
                     </form>
                 </div>
@@ -78,7 +92,7 @@
                     const userButton = document.getElementById("userButton");
                     const userMenu = document.getElementById("userMenu");
 
-                    // Mostrar menú al pasar o hacer clic
+                    // Mostrar menÃº al pasar o hacer clic
                     userButton.addEventListener("mouseenter", () => userMenu.classList.remove("hidden"));
                     userButton.addEventListener("mouseleave", () => setTimeout(() => {
                         if (!userMenu.matches(":hover")) userMenu.classList.add("hidden");
