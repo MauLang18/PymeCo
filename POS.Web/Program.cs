@@ -67,7 +67,6 @@ builder.Services.ConfigureApplicationCookie(options =>
 var app = builder.Build();
 
 // ========== SEED DE ROLES Y USUARIO ADMIN ==========
-// Esto se ejecuta una vez al inicio para crear roles
 using (var scope = app.Services.CreateScope())
 {
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
@@ -165,3 +164,6 @@ static async Task SeedRolesAndAdminUser(
         }
     }
 }
+
+// ⭐ Hacer Program accesible para tests de integración
+public partial class Program { }
