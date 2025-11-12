@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore; // <- Importante para DbUpdateException
 using POS.Application.DTOs;
 using POS.Application.Interfaces;
 using POS.Domain.Entities;
@@ -45,7 +46,7 @@ namespace POS.Web.Controllers
         private int GetUsuarioIdActual()
         {
             var claim = User.FindFirstValue("UsuarioId") ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
-            return int.TryParse(claim, out var id) ? id : 1;
+            return int.TryParse(claim, out var id) ? id : 1; // Asegúrate que exista el Usuario 1 en BD
         }
 
         private static PedidoDto MapToDto(Pedido p)
@@ -129,6 +130,12 @@ namespace POS.Web.Controllers
             if (string.IsNullOrWhiteSpace(dto.EstadoPedido))
                 dto.EstadoPedido = "Pendiente";
 
+            // Validaciones básicas para evitar caer en FK/valores inválidos
+            if (dto.Detalles == null || dto.Detalles.Count == 0)
+                ModelState.AddModelError("", "Debes agregar al menos un detalle.");
+            else if (dto.Detalles.Any(d => d.ProductoId <= 0 || d.Cantidad <= 0))
+                ModelState.AddModelError("", "Cada detalle debe tener Producto y Cantidad > 0.");
+
             if (!ModelState.IsValid)
             {
                 LogModelStateErrors();
@@ -141,13 +148,19 @@ namespace POS.Web.Controllers
                 var id = await _pedidoService.CreateAsync(dto, ct);
                 return RedirectToAction(nameof(DetailsPedido), new { id });
             }
+            catch (DbUpdateException ex)
+            {
+                _logger.LogError(ex, "DbUpdateException guardando Pedido. Inner: {Inner}", ex.InnerException?.Message);
+                ModelState.AddModelError("", "No se pudo guardar el pedido. Verifica que Cliente, Usuario y Productos existan en la base de datos.");
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creando pedido");
                 ModelState.AddModelError("", "Ocurrió un error guardando el pedido.");
-                await CargarCombosAsync(dto.ClienteId);
-                return View("CreatePedido", dto);
             }
+
+            await CargarCombosAsync(dto.ClienteId);
+            return View("CreatePedido", dto);
         }
 
         // ---------- Edit ----------
@@ -171,6 +184,11 @@ namespace POS.Web.Controllers
             if (string.IsNullOrWhiteSpace(dto.EstadoPedido))
                 dto.EstadoPedido = "Pendiente";
 
+            if (dto.Detalles == null || dto.Detalles.Count == 0)
+                ModelState.AddModelError("", "Debes agregar al menos un detalle.");
+            else if (dto.Detalles.Any(d => d.ProductoId <= 0 || d.Cantidad <= 0))
+                ModelState.AddModelError("", "Cada detalle debe tener Producto y Cantidad > 0.");
+
             if (!ModelState.IsValid)
             {
                 LogModelStateErrors();
@@ -183,13 +201,19 @@ namespace POS.Web.Controllers
                 await _pedidoService.UpdateAsync(id, dto, ct);
                 return RedirectToAction(nameof(DetailsPedido), new { id });
             }
+            catch (DbUpdateException ex)
+            {
+                _logger.LogError(ex, "DbUpdateException actualizando Pedido {Id}. Inner: {Inner}", id, ex.InnerException?.Message);
+                ModelState.AddModelError("", "No se pudo actualizar el pedido. Verifica que Cliente, Usuario y Productos existan.");
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error actualizando pedido {Id}", id);
                 ModelState.AddModelError("", "Ocurrió un error actualizando el pedido.");
-                await CargarCombosAsync(dto.ClienteId);
-                return View("EditPedido", dto);
             }
+
+            await CargarCombosAsync(dto.ClienteId);
+            return View("EditPedido", dto);
         }
 
         // ---------- Delete ----------
@@ -210,9 +234,17 @@ namespace POS.Web.Controllers
                 await _pedidoService.DeleteAsync(id, ct);
                 return RedirectToAction(nameof(Index));
             }
+            catch (DbUpdateException ex)
+            {
+                _logger.LogError(ex, "DbUpdateException eliminando pedido {Id}. Inner: {Inner}", id, ex.InnerException?.Message);
+                // Si hay FK de detalles u otros, verás el detalle en el log
+                TempData["Msg"] = "No se pudo eliminar el pedido. Puede tener relaciones dependientes.";
+                return RedirectToAction(nameof(DetailsPedido), new { id });
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error eliminando pedido {Id}", id);
+                TempData["Msg"] = "Ocurrió un error al eliminar el pedido.";
                 return RedirectToAction(nameof(DetailsPedido), new { id });
             }
         }
