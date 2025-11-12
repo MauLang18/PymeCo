@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using POS.Application;
 using POS.Domain.Entities;
 using POS.Infrastructure;
@@ -20,7 +20,7 @@ builder.Host.UseSerilog();
 
 // 2) Servicios
 builder.Services.AddControllersWithViews();
-
+builder.Services.AddInfrastructure(builder.Configuration); // ⬅️ (una sola vez)
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(
@@ -106,6 +106,9 @@ app.UseCors("AllowAll");
 // ⚠️ IMPORTANTE: El orden es crítico
 app.UseAuthentication(); // Primero autenticación
 app.UseAuthorization();  // Luego autorización
+
+// Ensure the uploads folder exists
+Directory.CreateDirectory(Path.Combine(app.Environment.WebRootPath!, "uploads", "products"));
 
 // Ensure the uploads folder exists
 Directory.CreateDirectory(Path.Combine(app.Environment.WebRootPath!, "uploads", "products"));
