@@ -1,3 +1,85 @@
 @{
-    ViewData["Title"] = "Signup";
+    Layout = null;
 }
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Iniciar Sesión | Pyme Co.</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center font-sans">
+    <div class="bg-white shadow-2xl rounded-2xl p-10 w-full max-w-md border border-gray-200">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-800">
+                Bienvenido a <span class="text-blue-600">Pyme Co.</span>
+            </h1>
+            <p class="text-gray-500 text-sm mt-2">Ingresa tus credenciales para continuar</p>
+        </div>
+
+        @if (ViewBag.Error != null)
+        {
+            <div class="mb-4 bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-lg flex items-center gap-2">
+                <i data-lucide="alert-circle" class="w-4 h-4"></i>
+                <span>@ViewBag.Error</span>
+            </div>
+        }
+
+        <form asp-action="Login" asp-controller="Auth" method="post" class="space-y-6">
+            <div>
+                <label class="block text-gray-700 font-medium mb-1">Correo electrónico</label>
+                <div class="relative">
+                    <i data-lucide="mail" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4"></i>
+                    <input name="Email" type="email" required
+                           class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                           placeholder="ejemplo@correo.com" />
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-gray-700 font-medium mb-1">Contraseña</label>
+                <div class="relative">
+                    <i data-lucide="lock" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4"></i>
+                    <input name="Password" type="password" required
+                           class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                           placeholder="••••••••" />
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between text-sm text-gray-600">
+                <label class="flex items-center gap-2">
+                    <input type="checkbox" class="rounded text-blue-600 border-gray-300" />
+                    Recordarme
+                </label>
+                <a href="#" class="hover:underline text-blue-600 font-medium">¿Olvidaste tu contraseña?</a>
+            </div>
+
+            <button type="submit"
+                    class="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 text-lg hover:bg-blue-800 transition-all transform hover:scale-[1.03] shadow-md">
+                <i data-lucide="log-in" class="w-5 h-5"></i>
+                Iniciar Sesión
+            </button>
+        </form>
+
+        <p class="text-center text-sm text-gray-600 mt-6">
+            ¿No tienes una cuenta?
+            <a href="@Url.Action("Signup", "Auth")" class="text-blue-600 font-medium hover:underline">Regístrate aquí</a>
+        </p>
+        <div class="mt-8 bg-blue-50 p-4 rounded-lg text-sm text-gray-700">
+            <h4 class="font-semibold mb-2 flex items-center gap-2">
+                Credenciales de prueba
+            </h4>
+            <p><span class="font-semibold">Email:</span> admin@pos.com</p>
+            <p><span class="font-semibold">Contraseña:</span> Admin123!</p>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

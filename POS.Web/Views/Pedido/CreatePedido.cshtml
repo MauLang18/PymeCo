@@ -15,11 +15,9 @@
     <form asp-action="CreatePedido" method="post" id="formPedido" class="space-y-6">
         @Html.AntiForgeryToken()
 
-        <!-- Resumen de validación -->
         <div asp-validation-summary="All" class="mb-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700"></div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- Datos -->
             <div class="rounded-xl border border-gray-200 bg-white p-4">
                 <h3 class="text-sm font-semibold text-gray-700 mb-3">Datos</h3>
                 <div class="space-y-4">
@@ -29,9 +27,9 @@
                         <span asp-validation-for="ClienteId" class="text-red-600 text-sm"></span>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Usuario</label>
-                        <input value="@Model.UsuarioId" class="w-full rounded-lg border-gray-200 bg-gray-50 text-gray-600" disabled />
-                        <input type="hidden" asp-for="UsuarioId" />
+                        <label asp-for="UsuarioId" class="block text-sm font-medium text-gray-700 mb-1">Usuario</label>
+                        <select asp-for="UsuarioId" asp-items="ViewBag.Usuarios" class="w-full rounded-lg border-gray-300 focus:ring-blue-500 focus:border-blue-500" required></select>
+                        <span asp-validation-for="UsuarioId" class="text-red-600 text-sm"></span>
                     </div>
                     <div>
                         <label asp-for="EstadoPedido" class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
@@ -44,7 +42,6 @@
                 </div>
             </div>
 
-            <!-- Totales -->
             <div class="rounded-xl border border-gray-200 bg-white p-4">
                 <h3 class="text-sm font-semibold text-gray-700 mb-3">Totales</h3>
                 <div class="grid grid-cols-3 gap-4">
@@ -64,7 +61,6 @@
             </div>
         </div>
 
-        <!-- Detalles -->
         <div class="rounded-xl border border-gray-200 bg-white">
             <div class="flex items-center justify-between p-4">
                 <h3 class="text-sm font-semibold text-gray-700">Detalles</h3>
@@ -101,7 +97,6 @@
     </form>
 </div>
 
-<!-- Modal -->
 <div id="modalDetalle" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/30">
     <div class="w-full max-w-2xl rounded-xl bg-white p-5 shadow-xl">
         <div class="flex items-center justify-between mb-3">
@@ -253,3 +248,4 @@
         });
     </script>
 }
+
