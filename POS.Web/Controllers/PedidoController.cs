@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Logging;
-using Microsoft.EntityFrameworkCore; // <- Importante para DbUpdateException
+using Microsoft.EntityFrameworkCore;
 using POS.Application.DTOs;
 using POS.Application.Interfaces;
 using POS.Domain.Entities;
@@ -46,7 +46,7 @@ namespace POS.Web.Controllers
         private int GetUsuarioIdActual()
         {
             var claim = User.FindFirstValue("UsuarioId") ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
-            return int.TryParse(claim, out var id) ? id : 1; // Asegúrate que exista el Usuario 1 en BD
+            return int.TryParse(claim, out var id) ? id : 1;
         }
 
         private static PedidoDto MapToDto(Pedido p)
@@ -237,7 +237,6 @@ namespace POS.Web.Controllers
             catch (DbUpdateException ex)
             {
                 _logger.LogError(ex, "DbUpdateException eliminando pedido {Id}. Inner: {Inner}", id, ex.InnerException?.Message);
-                // Si hay FK de detalles u otros, verás el detalle en el log
                 TempData["Msg"] = "No se pudo eliminar el pedido. Puede tener relaciones dependientes.";
                 return RedirectToAction(nameof(DetailsPedido), new { id });
             }
