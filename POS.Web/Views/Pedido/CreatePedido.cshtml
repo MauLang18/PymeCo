@@ -1,0 +1,48 @@
+﻿@model POS.Application.DTOs.PedidoDto
+@{
+    ViewData["Title"] = "Crear Pedido";
+}
+
+<h2 class="mb-3">Crear Pedido</h2>
+
+<form asp-action="CreatePedido" method="post" class="row g-3">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <div class="col-md-6">
+        <label asp-for="ClienteId" class="form-label"></label>
+        <input asp-for="ClienteId" class="form-control" />
+        <span asp-validation-for="ClienteId" class="text-danger"></span>
+    </div>
+
+    <div class="col-md-6">
+        <label asp-for="UsuarioId" class="form-label"></label>
+        <input asp-for="UsuarioId" class="form-control" />
+        <span asp-validation-for="UsuarioId" class="text-danger"></span>
+    </div>
+
+    <div class="col-md-4">
+        <label asp-for="Fecha" class="form-label"></label>
+        <input asp-for="Fecha" class="form-control" type="datetime-local" />
+        <span asp-validation-for="Fecha" class="text-danger"></span>
+    </div>
+
+    <div class="col-md-4">
+        <label class="form-label">Estado</label>
+        <select asp-for="EstadoPedido" class="form-select">
+            <option>Pendiente</option>
+            <option>Pagado</option>
+            <option>Enviado</option>
+            <option>Cancelado</option>
+        </select>
+        <span asp-validation-for="EstadoPedido" class="text-danger"></span>
+    </div>
+
+    <div class="col-12">
+        <button type="submit" class="btn btn-success">Guardar</button>
+        <a asp-action="ListPedido" class="btn btn-outline-secondary">Volver</a>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

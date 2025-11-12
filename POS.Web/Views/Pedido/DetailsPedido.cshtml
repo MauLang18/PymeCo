@@ -1,0 +1,68 @@
+﻿@model POS.Domain.Entities.Pedido
+@{
+    ViewData["Title"] = $"Pedido #{Model.Id}";
+}
+
+<h2 class="mb-3">Pedido #@Model.Id</h2>
+
+<dl class="row">
+    <dt class="col-sm-2">Cliente</dt>
+    <dd class="col-sm-10">@Model.Cliente?.Name (@Model.ClienteId)</dd>
+
+    <dt class="col-sm-2">Usuario</dt>
+    <dd class="col-sm-10">@Model.Usuario?.Nombre (@Model.UsuarioId)</dd>
+
+    <dt class="col-sm-2">Fecha</dt>
+    <dd class="col-sm-10">@Model.Fecha.ToString("yyyy-MM-dd HH:mm")</dd>
+
+    <dt class="col-sm-2">Estado</dt>
+    <dd class="col-sm-10">@Model.Estado</dd>
+</dl>
+
+<h5>Detalles</h5>
+
+@if (Model.Detalles is null || !Model.Detalles.Any())
+{
+    <div class="alert alert-info">Sin detalles.</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-sm table-striped align-middle">
+            <thead>
+                <tr>
+                    <th>ProductoId</th>
+                    <th>Cantidad</th>
+                    <th>Precio Unit.</th>
+                    <th>Desc. %</th>
+                    <th>Imp. %</th>
+                    <th>Total Línea</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var d in Model.Detalles.OrderBy(x => x.Id))
+                {
+                    <tr>
+                        <td>@d.ProductoId</td>
+                        <td>@d.Cantidad</td>
+                        <td>@d.PrecioUnit.ToString("N2")</td>
+                        <td>@d.Descuento.ToString("N2")</td>
+                        <td>@d.ImpuestoPorc.ToString("N2")</td>
+                        <td>@d.TotalLinea.ToString("N2")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<div class="mt-3">
+    <p><strong>Subtotal:</strong> @Model.Subtotal.ToString("N2")</p>
+    <p><strong>Impuestos:</strong> @Model.Impuestos.ToString("N2")</p>
+    <p class="fs-5"><strong>Total:</strong> @Model.Total.ToString("N2")</p>
+</div>
+
+<div class="mt-3">
+    <a asp-action="EditPedido" asp-route-id="@Model.Id" class="btn btn-primary">Editar</a>
+    <a asp-action="ListPedido" class="btn btn-outline-secondary">Volver</a>
+</div>

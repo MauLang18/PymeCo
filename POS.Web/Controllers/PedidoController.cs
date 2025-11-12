@@ -17,6 +17,7 @@ public class PedidoController : Controller
         _logger = logger;
     }
 
+    // LIST
     [HttpGet]
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public async Task<IActionResult> ListPedido(string? estado, CancellationToken ct)
@@ -28,6 +29,7 @@ public class PedidoController : Controller
         return View("ListPedido", items);
     }
 
+    // CREATE (GET)
     [HttpGet]
     public IActionResult CreatePedido()
     {
@@ -35,6 +37,7 @@ public class PedidoController : Controller
         return View("CreatePedido", new PedidoDto());
     }
 
+    // CREATE (POST)
     [HttpPost]
     public async Task<IActionResult> CreatePedido(PedidoDto dto, CancellationToken ct)
     {
@@ -50,6 +53,7 @@ public class PedidoController : Controller
         return RedirectToAction(nameof(DetailsPedido), new { id });
     }
 
+    // EDIT (GET)
     [HttpGet]
     public async Task<IActionResult> EditPedido(int id, CancellationToken ct)
     {
@@ -61,7 +65,6 @@ public class PedidoController : Controller
             return NotFound();
         }
 
-        // Map a DTO para el formulario principal (los detalles se editan con endpoints anidados)
         var dto = new PedidoDto
         {
             ClienteId = entity.ClienteId,
@@ -74,17 +77,24 @@ public class PedidoController : Controller
         };
 
         ViewBag.PedidoId = id;
+        ViewData["Detalles"] = entity.Detalles?.OrderBy(d => d.Id).ToList() ?? new();
+
         _logger.LogInformation("GET EditPedido loaded. Id={Id}", id);
         return View("EditPedido", dto);
     }
 
+    // EDIT (POST)
     [HttpPost]
     public async Task<IActionResult> EditPedido(int id, PedidoDto dto, CancellationToken ct)
     {
         if (!ModelState.IsValid)
         {
             _logger.LogWarning("POST EditPedido invalid model. Id={Id} Errors={Errors}", id, ModelState.ErrorCount);
+
             ViewBag.PedidoId = id;
+            var current = await _service.GetByIdAsync(id, ct);
+            ViewData["Detalles"] = current?.Detalles?.OrderBy(d => d.Id).ToList() ?? new();
+
             return View("EditPedido", dto);
         }
 
@@ -94,6 +104,7 @@ public class PedidoController : Controller
         return RedirectToAction(nameof(DetailsPedido), new { id });
     }
 
+    // DELETE (GET)
     [HttpGet]
     public async Task<IActionResult> DeletePedido(int id, CancellationToken ct)
     {
@@ -108,6 +119,7 @@ public class PedidoController : Controller
         return View("DeletePedido", entity);
     }
 
+    // DELETE (POST)
     [HttpPost, ActionName("DeletePedido")]
     public async Task<IActionResult> DeletePedidoConfirmed(int id, CancellationToken ct)
     {
@@ -117,6 +129,7 @@ public class PedidoController : Controller
         return RedirectToAction(nameof(ListPedido));
     }
 
+    // DETAILS
     [HttpGet]
     public async Task<IActionResult> DetailsPedido(int id, CancellationToken ct)
     {
@@ -132,7 +145,7 @@ public class PedidoController : Controller
         return View("DetailsPedido", entity);
     }
 
-    // Agregar detalle a un pedido existente
+    // ADD detalle
     [HttpPost]
     public async Task<IActionResult> AddDetalle(int pedidoId, PedidoDetalleDto detalle, CancellationToken ct)
     {
@@ -140,7 +153,6 @@ public class PedidoController : Controller
         {
             _logger.LogWarning("POST AddDetalle invalid model. PedidoId={PedidoId} Errors={Errors}",
                 pedidoId, ModelState.ErrorCount);
-            // Redirige a editar para mostrar validaciones
             return RedirectToAction(nameof(EditPedido), new { id = pedidoId });
         }
 
@@ -151,7 +163,7 @@ public class PedidoController : Controller
         return RedirectToAction(nameof(EditPedido), new { id = pedidoId });
     }
 
-    // Actualizar un detalle específico
+    // UPDATE detalle
     [HttpPost]
     public async Task<IActionResult> UpdateDetalle(int detalleId, PedidoDetalleDto detalle, int pedidoId, CancellationToken ct)
     {
@@ -169,7 +181,7 @@ public class PedidoController : Controller
         return RedirectToAction(nameof(EditPedido), new { id = pedidoId });
     }
 
-    // Eliminar un detalle
+    // REMOVE detalle
     [HttpPost]
     public async Task<IActionResult> RemoveDetalle(int detalleId, int pedidoId, CancellationToken ct)
     {
@@ -179,7 +191,7 @@ public class PedidoController : Controller
         return RedirectToAction(nameof(EditPedido), new { id = pedidoId });
     }
 
-    // Recalcular totales del pedido
+    // RECALCULAR totales
     [HttpPost]
     public async Task<IActionResult> Recalcular(int pedidoId, CancellationToken ct)
     {
@@ -189,7 +201,7 @@ public class PedidoController : Controller
         return RedirectToAction(nameof(EditPedido), new { id = pedidoId });
     }
 
-    // Cambiar estado del pedido (Pendiente|Pagado|Enviado|Cancelado)
+    // CAMBIAR estado
     [HttpPost]
     public async Task<IActionResult> CambiarEstado(int pedidoId, string estado, CancellationToken ct)
     {

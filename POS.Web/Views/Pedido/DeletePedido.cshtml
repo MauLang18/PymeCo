@@ -1,0 +1,24 @@
+﻿@model POS.Domain.Entities.Pedido
+@{
+    ViewData["Title"] = "Eliminar Pedido";
+}
+
+<h2>¿Eliminar Pedido #@Model.Id?</h2>
+
+<dl class="row">
+    <dt class="col-sm-2">Cliente</dt>
+    <dd class="col-sm-10">@Model.Cliente?.Name (@Model.ClienteId)</dd>
+    <dt class="col-sm-2">Usuario</dt>
+    <dd class="col-sm-10">@Model.Usuario?.Nombre (@Model.UsuarioId)</dd>
+    <dt class="col-sm-2">Fecha</dt>
+    <dd class="col-sm-10">@Model.Fecha.ToString("yyyy-MM-dd HH:mm")</dd>
+    <dt class="col-sm-2">Estado</dt>
+    <dd class="col-sm-10">@Model.Estado</dd>
+    <dt class="col-sm-2">Total</dt>
+    <dd class="col-sm-10">@Model.Total.ToString("N2")</dd>
+</dl>
+
+<form asp-action="DeletePedido" asp-route-id="@Model.Id" method="post">
+    <button type="submit" class="btn btn-danger">Eliminar</button>
+    <a asp-action="ListPedido" class="btn btn-secondary">Cancelar</a>
+</form>

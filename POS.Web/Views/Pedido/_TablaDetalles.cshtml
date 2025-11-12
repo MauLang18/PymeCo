@@ -1,0 +1,59 @@
+﻿@model IEnumerable<POS.Domain.Entities.PedidoDetalle>
+@{
+    var pedidoId = (int)(ViewBag.PedidoId ?? 0);
+}
+
+@if (Model == null || !Model.Any())
+{
+    <div class="alert alert-info">Este pedido no tiene detalles.</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-sm table-striped align-middle">
+            <thead>
+                <tr>
+                    <th>Id</th>
+                    <th>ProductoId</th>
+                    <th>Cantidad</th>
+                    <th>PrecioUnit</th>
+                    <th>Desc. %</th>
+                    <th>Imp. %</th>
+                    <th>Total Línea</th>
+                    <th style="width: 210px;"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var d in Model)
+                {
+                    <tr>
+                        <td>@d.Id</td>
+                        <td>@d.ProductoId</td>
+                        <td colspan="5">
+                            <form asp-action="UpdateDetalle" method="post" class="d-flex flex-wrap gap-1">
+                                <input type="hidden" name="pedidoId" value="@pedidoId" />
+                                <input type="hidden" name="detalleId" value="@d.Id" />
+
+                                <input name="ProductoId" class="form-control form-control-sm" style="width: 95px" type="number" min="1" value="@d.ProductoId" />
+                                <input name="Cantidad" class="form-control form-control-sm" style="width: 85px" type="number" min="1" value="@d.Cantidad" />
+                                <input name="PrecioUnitario" class="form-control form-control-sm" style="width: 115px" type="number" step="0.01" min="0" value="@d.PrecioUnit" />
+                                <input name="DescuentoPorc" class="form-control form-control-sm" style="width: 105px" type="number" step="0.01" min="0" max="100" value="@d.Descuento" />
+                                <input name="ImpuestoPorc" class="form-control form-control-sm" style="width: 105px" type="number" step="0.01" min="0" max="100" value="@d.ImpuestoPorc" />
+                                <input name="TotalLinea" class="form-control form-control-sm" style="width: 115px" type="number" step="0.01" min="0" value="@d.TotalLinea" />
+
+                                <button type="submit" class="btn btn-sm btn-primary">Guardar</button>
+                            </form>
+                        </td>
+                        <td class="text-nowrap">
+                            <form asp-action="RemoveDetalle" method="post" onsubmit="return confirm('¿Eliminar detalle @d.Id?');">
+                                <input type="hidden" name="pedidoId" value="@pedidoId" />
+                                <input type="hidden" name="detalleId" value="@d.Id" />
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

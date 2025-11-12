@@ -1,0 +1,62 @@
+﻿@model IEnumerable<POS.Domain.Entities.Pedido>
+@{
+    ViewData["Title"] = "Pedidos";
+}
+
+<h2 class="mb-3">Pedidos</h2>
+
+<form asp-action="ListPedido" method="get" class="row g-2 mb-3">
+    <div class="col-auto">
+        <select name="estado" class="form-select">
+            <option value="">-- Todos --</option>
+            <option value="Pendiente">Pendiente</option>
+            <option value="Pagado">Pagado</option>
+            <option value="Enviado">Enviado</option>
+            <option value="Cancelado">Cancelado</option>
+        </select>
+    </div>
+    <div class="col-auto">
+        <button class="btn btn-primary" type="submit">Filtrar</button>
+        <a asp-action="ListPedido" class="btn btn-outline-secondary">Limpiar</a>
+    </div>
+</form>
+
+<div class="mb-3">
+    <a asp-action="CreatePedido" class="btn btn-success">Nuevo Pedido</a>
+</div>
+
+<table class="table table-striped table-sm align-middle">
+    <thead>
+        <tr>
+            <th>Id</th>
+            <th>Cliente</th>
+            <th>Usuario</th>
+            <th>Fecha</th>
+            <th>Subtotal</th>
+            <th>Impuestos</th>
+            <th>Total</th>
+            <th>Estado</th>
+            <th style="width:220px;"></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var p in Model)
+        {
+            <tr>
+                <td>@p.Id</td>
+                <td>@p.Cliente?.Name (@p.ClienteId)</td>
+                <td>@p.Usuario?.Nombre (@p.UsuarioId)</td>
+                <td>@p.Fecha.ToString("yyyy-MM-dd HH:mm")</td>
+                <td>@p.Subtotal.ToString("N2")</td>
+                <td>@p.Impuestos.ToString("N2")</td>
+                <td><strong>@p.Total.ToString("N2")</strong></td>
+                <td>@p.Estado</td>
+                <td class="text-nowrap">
+                    <a asp-action="DetailsPedido" asp-route-id="@p.Id" class="btn btn-sm btn-outline-info">Ver</a>
+                    <a asp-action="EditPedido" asp-route-id="@p.Id" class="btn btn-sm btn-primary">Editar</a>
+                    <a asp-action="DeletePedido" asp-route-id="@p.Id" class="btn btn-sm btn-outline-danger">Eliminar</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
