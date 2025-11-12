@@ -1,3 +1,75 @@
+@model POS.Web.ViewModels.SignupViewModel
 @{
-    ViewData["Title"] = "Signup";
+    ViewData["Title"] = "Registrarse - POS";
+}
+
+<div class="container">
+    <div class="row justify-content-center mt-5">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow">
+                <div class="card-body p-5">
+                    <div class="text-center mb-4">
+                        <h2 class="fw-bold">📝 Crear Cuenta</h2>
+                        <p class="text-muted">Regístrate en el sistema POS</p>
+                    </div>
+
+                    <form asp-action="Signup" method="post">
+                        <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="FullName" class="form-label"></label>
+                            <input asp-for="FullName" class="form-control" placeholder="Juan Pérez" />
+                            <span asp-validation-for="FullName" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Email" class="form-label"></label>
+                            <input asp-for="Email" class="form-control" placeholder="correo@ejemplo.com" />
+                            <span asp-validation-for="Email" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Password" class="form-label"></label>
+                            <input asp-for="Password" class="form-control" placeholder="••••••••" />
+                            <span asp-validation-for="Password" class="text-danger"></span>
+                            <small class="form-text text-muted">
+                                Mínimo 6 caracteres, debe incluir mayúsculas, minúsculas y números
+                            </small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="ConfirmPassword" class="form-label"></label>
+                            <input asp-for="ConfirmPassword" class="form-control" placeholder="••••••••" />
+                            <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                        </div>
+
+                        <button type="submit" class="btn btn-success w-100 mb-3">
+                            <i class="bi bi-person-plus"></i> Crear Cuenta
+                        </button>
+                    </form>
+
+                    <hr />
+
+                    <div class="text-center">
+                        <p class="mb-0">
+                            ¿Ya tienes cuenta?
+                            <a asp-action="Login" class="text-decoration-none">Inicia sesión aquí</a>
+                        </p>
+                    </div>
+
+                    <!-- Nota sobre roles -->
+                    <div class="alert alert-warning mt-4" role="alert">
+                        <small>
+                            <strong>ℹ️ Nota:</strong> Las nuevas cuentas se registran con el rol <strong>Cajero</strong> por defecto.
+                            Contacta al administrador para cambiar tu rol.
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
 }
