@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using POS.Application.DTOs;
 using POS.Application.Interfaces;
 using POS.Domain.Enums;
@@ -6,6 +8,13 @@ using POS.Infrastructure.FileStorage;
 
 namespace POS.Web.Controllers;
 
+/// <summary>
+/// Controlador de productos con autorización por roles
+/// - Admin: Puede hacer todo (crear, editar, eliminar, ver)
+/// - Vendedor: Solo puede ver listado y detalles
+/// - Cajero: Solo puede ver listado y detalles
+/// </summary>
+[Authorize] // ⚠️ Requiere que el usuario esté autenticado para acceder
 public class ProductController : Controller
 {
     private readonly IProductService _service;
@@ -18,8 +27,12 @@ public class ProductController : Controller
         _files = files;
     }
 
+    /// <summary>
+    /// Listar productos - Todos los usuarios autenticados pueden verlo
+    /// </summary>
     [HttpGet]
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+    [Authorize(Roles = "Admin,Vendedor,Cajero")] // Todos los roles
     public async Task<IActionResult> ListProduct(string? q, CancellationToken ct)
     {
         _logger.LogInformation("GET ListProduct started. Query={Query}", q);
@@ -29,7 +42,11 @@ public class ProductController : Controller
         return View("ListProduct", items);
     }
 
+    /// <summary>
+    /// Crear producto - Solo Admin
+    /// </summary>
     [HttpGet]
+    [Authorize(Roles = "Admin")] // ⚠️ Solo Admin puede crear
     public IActionResult CreateProduct()
     {
         _logger.LogInformation("GET CreateProduct view requested");
@@ -38,6 +55,7 @@ public class ProductController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Admin")] // ⚠️ Solo Admin puede crear
     public async Task<IActionResult> CreateProduct(ProductDto dto, CancellationToken ct)
     {
         if (!ModelState.IsValid)
@@ -61,7 +79,11 @@ public class ProductController : Controller
         return RedirectToAction(nameof(DetailsProduct), new { id });
     }
 
+    /// <summary>
+    /// Editar producto - Solo Admin
+    /// </summary>
     [HttpGet]
+    [Authorize(Roles = "Admin")] // ⚠️ Solo Admin puede editar
     public async Task<IActionResult> EditProduct(int id, CancellationToken ct)
     {
         _logger.LogInformation("GET EditProduct started. Id={Id}", id);
@@ -90,6 +112,7 @@ public class ProductController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Admin")] // ⚠️ Solo Admin puede editar
     public async Task<IActionResult> EditProduct(int id, ProductDto dto, CancellationToken ct)
     {
         if (!ModelState.IsValid)
@@ -127,7 +150,11 @@ public class ProductController : Controller
         return RedirectToAction(nameof(DetailsProduct), new { id });
     }
 
+    /// <summary>
+    /// Eliminar producto - Solo Admin
+    /// </summary>
     [HttpGet]
+    [Authorize(Roles = "Admin")] // ⚠️ Solo Admin puede eliminar
     public async Task<IActionResult> DeleteProduct(int id, CancellationToken ct)
     {
         _logger.LogInformation("GET DeleteProduct confirmation started. Id={Id}", id);
@@ -144,6 +171,7 @@ public class ProductController : Controller
 
     [HttpPost, ActionName("DeleteProduct")]
     [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Admin")] // ⚠️ Solo Admin puede eliminar
     public async Task<IActionResult> DeleteProductConfirmed(int id, CancellationToken ct)
     {
         _logger.LogInformation("POST DeleteProductConfirmed started. Id={Id}", id);
@@ -152,7 +180,11 @@ public class ProductController : Controller
         return RedirectToAction(nameof(ListProduct));
     }
 
+    /// <summary>
+    /// Ver detalles - Todos los usuarios autenticados
+    /// </summary>
     [HttpGet]
+    [Authorize(Roles = "Admin,Vendedor,Cajero")] // Todos pueden ver detalles
     public async Task<IActionResult> DetailsProduct(int id, CancellationToken ct)
     {
         _logger.LogInformation("GET DetailsProduct started. Id={Id}", id);

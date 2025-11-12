@@ -1,9 +1,18 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using POS.Application.DTOs;
 using POS.Application.Interfaces;
 
 namespace POS.Web.Controllers;
 
+/// <summary>
+/// Controlador de clientes con autorización por roles
+/// - Admin: Puede hacer todo
+/// - Vendedor: Puede ver, crear y editar (no eliminar)
+/// - Cajero: Solo puede ver
+/// </summary>
+[Authorize] // Requiere autenticación
 public class ClientController : Controller
 {
     private readonly IClientService _service;
@@ -15,8 +24,12 @@ public class ClientController : Controller
         _logger = logger;
     }
 
+    /// <summary>
+    /// Listar clientes - Todos pueden ver
+    /// </summary>
     [HttpGet]
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+    [Authorize(Roles = "Admin,Vendedor,Cajero")]
     public async Task<IActionResult> ListClient(string? q, CancellationToken ct)
     {
         _logger.LogInformation("GET ListClient started. Query={Query}", q);
@@ -26,7 +39,11 @@ public class ClientController : Controller
         return View("ListClient", items);
     }
 
+    /// <summary>
+    /// Crear cliente - Admin y Vendedor
+    /// </summary>
     [HttpGet]
+    [Authorize(Roles = "Admin,Vendedor")] // Cajero NO puede crear
     public IActionResult CreateClient()
     {
         _logger.LogInformation("GET CreateClient view requested");
@@ -35,6 +52,7 @@ public class ClientController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Admin,Vendedor")]
     public async Task<IActionResult> CreateClient(ClientDto dto, CancellationToken ct)
     {
         if (!ModelState.IsValid)
@@ -52,7 +70,11 @@ public class ClientController : Controller
         return RedirectToAction(nameof(DetailsClient), new { id });
     }
 
+    /// <summary>
+    /// Editar cliente - Admin y Vendedor
+    /// </summary>
     [HttpGet]
+    [Authorize(Roles = "Admin,Vendedor")]
     public async Task<IActionResult> EditClient(int id, CancellationToken ct)
     {
         _logger.LogInformation("GET EditClient started. Id={Id}", id);
@@ -69,6 +91,7 @@ public class ClientController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Admin,Vendedor")]
     public async Task<IActionResult> EditClient(int id, ClientDto dto, CancellationToken ct)
     {
         if (!ModelState.IsValid)
@@ -87,7 +110,11 @@ public class ClientController : Controller
         return RedirectToAction(nameof(DetailsClient), new { id });
     }
 
+    /// <summary>
+    /// Eliminar cliente - Solo Admin
+    /// </summary>
     [HttpGet]
+    [Authorize(Roles = "Admin")] // Solo Admin puede eliminar
     public async Task<IActionResult> DeleteClient(int id, CancellationToken ct)
     {
         _logger.LogInformation("GET DeleteClient confirmation started. Id={Id}", id);
@@ -104,6 +131,7 @@ public class ClientController : Controller
 
     [HttpPost, ActionName("DeleteClient")]
     [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteClientConfirmed(int id, CancellationToken ct)
     {
         _logger.LogInformation("POST DeleteClientConfirmed started. Id={Id}", id);
@@ -112,7 +140,11 @@ public class ClientController : Controller
         return RedirectToAction(nameof(ListClient));
     }
 
+    /// <summary>
+    /// Ver detalles - Todos pueden ver
+    /// </summary>
     [HttpGet]
+    [Authorize(Roles = "Admin,Vendedor,Cajero")]
     public async Task<IActionResult> DetailsClient(int id, CancellationToken ct)
     {
         _logger.LogInformation("GET DetailsClient started. Id={Id}", id);

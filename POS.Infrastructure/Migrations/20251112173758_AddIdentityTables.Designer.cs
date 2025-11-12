@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using POS.Infrastructure.Persistence;
 
@@ -11,9 +12,11 @@ using POS.Infrastructure.Persistence;
 namespace POS.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251112173758_AddIdentityTables")]
+    partial class AddIdentityTables
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -283,129 +286,6 @@ namespace POS.Infrastructure.Migrations
                         .HasDatabaseName("IX_Cliente_Cedula");
 
                     b.ToTable("Cliente", "dbo");
-                });
-
-            modelBuilder.Entity("POS.Domain.Entities.Pedido", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("Id");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("ClienteId")
-                        .HasColumnType("int")
-                        .HasColumnName("ClienteId");
-
-                    b.Property<string>("Estado")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasDefaultValue("Pendiente")
-                        .HasColumnName("EstadoPedido");
-
-                    b.Property<DateTime>("Fecha")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasColumnName("Fecha")
-                        .HasDefaultValueSql("GETDATE()");
-
-                    b.Property<decimal>("Impuestos")
-                        .ValueGeneratedOnAdd()
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)")
-                        .HasDefaultValue(0m)
-                        .HasColumnName("Impuestos");
-
-                    b.Property<decimal>("Subtotal")
-                        .ValueGeneratedOnAdd()
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)")
-                        .HasDefaultValue(0m)
-                        .HasColumnName("Subtotal");
-
-                    b.Property<decimal>("Total")
-                        .ValueGeneratedOnAdd()
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)")
-                        .HasDefaultValue(0m)
-                        .HasColumnName("Total");
-
-                    b.Property<int>("UsuarioId")
-                        .HasColumnType("int")
-                        .HasColumnName("UsuarioId");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ClienteId")
-                        .HasDatabaseName("IX_Pedido_ClienteId");
-
-                    b.HasIndex("Estado")
-                        .HasDatabaseName("IX_Pedido_Estado");
-
-                    b.HasIndex("Fecha")
-                        .HasDatabaseName("IX_Pedido_Fecha");
-
-                    b.HasIndex("UsuarioId");
-
-                    b.ToTable("Pedido", "dbo");
-                });
-
-            modelBuilder.Entity("POS.Domain.Entities.PedidoDetalle", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("Id");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("Cantidad")
-                        .HasColumnType("int")
-                        .HasColumnName("Cantidad");
-
-                    b.Property<decimal>("Descuento")
-                        .ValueGeneratedOnAdd()
-                        .HasPrecision(5, 2)
-                        .HasColumnType("decimal(5,2)")
-                        .HasDefaultValue(0m)
-                        .HasColumnName("DescuentoPorc");
-
-                    b.Property<decimal>("ImpuestoPorc")
-                        .ValueGeneratedOnAdd()
-                        .HasPrecision(5, 2)
-                        .HasColumnType("decimal(5,2)")
-                        .HasDefaultValue(13m)
-                        .HasColumnName("ImpuestoPorc");
-
-                    b.Property<int>("PedidoId")
-                        .HasColumnType("int")
-                        .HasColumnName("PedidoId");
-
-                    b.Property<decimal>("PrecioUnit")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)")
-                        .HasColumnName("PrecioUnitario");
-
-                    b.Property<int>("ProductoId")
-                        .HasColumnType("int")
-                        .HasColumnName("ProductoId");
-
-                    b.Property<decimal>("TotalLinea")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)")
-                        .HasColumnName("TotalLinea");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PedidoId");
-
-                    b.HasIndex("ProductoId")
-                        .HasDatabaseName("IX_PedidoDetalle_ProductoId");
-
-                    b.ToTable("PedidoDetalle", "dbo");
                 });
 
             modelBuilder.Entity("POS.Domain.Entities.Product", b =>
