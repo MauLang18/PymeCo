@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using POS.Domain.Entities;
 using POS.Infrastructure.Persistence;
+using POS.Domain.Enums;
 
 namespace POS.Infrastructure.Repositories;
 
@@ -25,10 +26,21 @@ public class ProductRepository : IProductRepository
         CancellationToken ct = default
     )
     {
-        var q = _db.Products.AsNoTracking();
+        // solo lectura y solo productos mostrables
+        var q = _db.Products.AsNoTracking()
+            .Where(p => p.Status == POS.Domain.Enums.ProductStatus.Active && p.Stock > 0);
+
         if (!string.IsNullOrWhiteSpace(search))
-            q = q.Where(p => p.Name.Contains(search));
-        return await q.OrderBy(p => p.Name).ToListAsync(ct);
+        {
+            var term = search.Trim();
+            q = q.Where(p => p.Name.Contains(term));
+        }
+
+        // Orden + TOP 10
+        return await q
+            .OrderBy(p => p.Name)
+            .Take(10)
+            .ToListAsync(ct);
     }
 
     public Task<bool> ExistsByNameAsync(string name, CancellationToken ct = default) =>
