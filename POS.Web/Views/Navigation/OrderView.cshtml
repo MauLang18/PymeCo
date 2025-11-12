@@ -1,5 +1,41 @@
-@{
-    ViewData["Title"] = "PedidoView";
+﻿@{
+    ViewData["Title"] = "Orden";
 }
 
-<h1>PedidoView</h1>
+@using (Html.BeginForm("Create", "Order", FormMethod.Post, new { id = "orderForm" }))
+{
+    @Html.AntiForgeryToken()
+
+    <div class="container py-3">
+        <h3>Crear Orden</h3>
+
+        <!-- BUSCAR -->
+        <input id="txtBuscar" type="text" class="form-control" placeholder="Buscar producto..." />
+        <ul id="resultados" class="list-group mt-2"></ul>
+
+        <!-- LÍNEAS -->
+        <table id="lineas" class="table table-sm mt-3">
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th style="width:120px">Cant</th>
+                    <th style="width:130px">Desc %</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <!-- TOTALES -->
+        <div class="mt-2">
+            <strong>Subtotal:</strong> <span id="subtotal">0.00</span><br />
+            <strong>Impuestos:</strong> <span id="impuestos">0.00</span><br />
+            <strong>Total:</strong> <span id="total">0.00</span>
+        </div>
+    </div>
+
+    @section Scripts {
+        <!-- solo carga este JS en esta vista -->
+        <script src="~/js/order.js" asp-append-version="true"></script>
+    }
+}
