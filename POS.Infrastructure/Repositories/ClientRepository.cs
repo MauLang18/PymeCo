@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using POS.Domain.Entities;
-using POS.Application.Interfaces;
 using POS.Infrastructure.Persistence;
 
 namespace POS.Infrastructure.Repositories;
