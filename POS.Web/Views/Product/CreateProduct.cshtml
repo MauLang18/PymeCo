@@ -3,7 +3,6 @@
 @{
     ViewBag.Title = "New Product";
     Layout = "~/Views/Shared/_Layout.cshtml";
-    // Espera que ViewBag.Categories sea SelectList (Value=Id, Text=Name)
     var categories = ViewBag.Categories as SelectList;
 }
 
@@ -13,7 +12,7 @@
         New Product
     </h1>
 
-    <form asp-action="CreateProduct" asp-controller="Product" method="post" class="space-y-6">
+    <form asp-action="CreateProduct" asp-controller="Product" method="post" class="space-y-6" enctype="multipart/form-data">
         @Html.AntiForgeryToken()
 
         <div asp-validation-summary="ModelOnly" class="text-[color:var(--error)] text-sm"></div>
@@ -69,12 +68,15 @@
                 <span asp-validation-for="Stock" class="text-[color:var(--error)] text-sm"></span>
             </div>
 
-            <!-- ImageUrl -->
+            <!-- Image (upload) -->
             <div class="sm:col-span-2">
-                <label asp-for="ImageUrl" class="block text-sm font-medium text-[color:var(--txt-secondary)] mb-2"></label>
-                <input asp-for="ImageUrl" type="url" maxlength="400" placeholder="https://..."
+                <label asp-for="ImageFile" class="block text-sm font-medium text-[color:var(--txt-secondary)] mb-2"></label>
+                <input asp-for="ImageFile" type="file" accept="image/*"
                        class="w-full border border-[color:var(--border)] rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[color:var(--primary)]" />
-                <span asp-validation-for="ImageUrl" class="text-[color:var(--error)] text-sm"></span>
+                <span asp-validation-for="ImageFile" class="text-[color:var(--error)] text-sm"></span>
+
+                <!-- Mantener el binding de ImageUrl pero oculto; el controlador lo establecerá tras guardar -->
+                <input asp-for="ImageUrl" type="hidden" />
             </div>
 
             <!-- Active -->

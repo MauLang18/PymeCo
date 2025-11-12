@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using System.ComponentModel.DataAnnotations;
 
 namespace POS.Application.DTOs;
@@ -19,7 +20,9 @@ public class ProductDto
     [Range(0, int.MaxValue)]
     public int Stock { get; set; }
 
-    [Url]
+    public IFormFile? ImageFile { get; set; }
+
+    [MaxLength(400)]
     public string? ImageUrl { get; set; }
 
     public bool Active { get; set; } = true; // convenience for UI
