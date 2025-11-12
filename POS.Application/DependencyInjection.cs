@@ -11,7 +11,7 @@ public static class DependencyInjection
         // Services (casos de uso)TargetFramework
         services.AddScoped<IProductService, ProductService>();
         services.AddScoped<IClientService, ClientService>();
-        services.AddScoped<IProductService, ProductService>();
+        services.AddScoped<IPedidoService, PedidoService>();
 
         // Si usas AutoMapper/FluentValidation/MediatR, agrégalos aquí.
         // services.AddAutoMapper(typeof(DependencyInjection).Assembly);
