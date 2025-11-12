@@ -1,0 +1,38 @@
+﻿@model IEnumerable<POS.Application.DTOs.PedidoDetalleDto>
+
+<div class="overflow-hidden rounded-xl border border-gray-200">
+    <div class="overflow-x-auto bg-white">
+        <table class="min-w-full text-sm">
+            <thead class="bg-gray-50 text-left text-gray-600">
+                <tr>
+                    <th class="px-4 py-3 font-medium">Producto</th>
+                    <th class="px-4 py-3 font-medium text-right">Cant.</th>
+                    <th class="px-4 py-3 font-medium text-right">Precio</th>
+                    <th class="px-4 py-3 font-medium text-right">Desc. %</th>
+                    <th class="px-4 py-3 font-medium text-right">Imp. %</th>
+                    <th class="px-4 py-3 font-medium text-right">Total línea</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                @if (Model == null || !Model.Any())
+                {
+                    <tr><td colspan="6" class="px-4 py-6 text-center text-gray-500">Sin detalles</td></tr>
+                }
+                else
+                {
+                    foreach (var d in Model)
+                    {
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-3">@((d.ProductoNombre ?? $"Prod {d.ProductoId}")) (@d.ProductoId)</td>
+                            <td class="px-4 py-3 text-right">@d.Cantidad</td>
+                            <td class="px-4 py-3 text-right">@d.PrecioUnitario.ToString("N2")</td>
+                            <td class="px-4 py-3 text-right">@d.DescuentoPorc.ToString("N2")</td>
+                            <td class="px-4 py-3 text-right">@d.ImpuestoPorc.ToString("N2")</td>
+                            <td class="px-4 py-3 text-right font-semibold">@d.TotalLinea.ToString("N2")</td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

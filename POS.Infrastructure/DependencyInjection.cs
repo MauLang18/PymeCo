@@ -20,6 +20,7 @@ public static class DependencyInjection
         // Repositories (implementan interfaces de Application)
         services.AddScoped<IProductRepository, ProductRepository>();
         services.AddScoped<IClientRepository, ClientRepository>();
+        services.AddScoped<IPedidoRepository, PedidoRepository>();
 
         return services;
     }

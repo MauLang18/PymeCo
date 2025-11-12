@@ -1,0 +1,95 @@
+﻿@model IEnumerable<POS.Application.DTOs.PedidoDto>
+@{
+    ViewData["Title"] = "Pedidos";
+}
+
+<div class="max-w-7xl mx-auto space-y-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-xl font-semibold text-gray-900">Pedidos</h1>
+            <p class="text-sm text-gray-500">Administra y revisa los pedidos.</p>
+        </div>
+        <a asp-action="CreatePedido"
+           class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
+            <i data-lucide="plus" class="w-4 h-4"></i> Nuevo Pedido
+        </a>
+    </div>
+
+    <!-- List -->
+    <div class="rounded-xl border border-gray-200 bg-white">
+        <div class="overflow-x-auto">
+            <table class="min-w-full text-sm">
+                <thead class="bg-gray-50 text-left text-gray-600">
+                    <tr>
+                        <th class="px-4 py-3 font-medium">#</th>
+                        <th class="px-4 py-3 font-medium">Fecha</th>
+                        <th class="px-4 py-3 font-medium">Cliente</th>
+                        <th class="px-4 py-3 font-medium">Usuario</th>
+                        <th class="px-4 py-3 font-medium text-right">Subtotal</th>
+                        <th class="px-4 py-3 font-medium text-right">Impuestos</th>
+                        <th class="px-4 py-3 font-medium text-right">Total</th>
+                        <th class="px-4 py-3 font-medium">Estado</th>
+                        <th class="px-4 py-3 font-medium text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @if (Model == null || !Model.Any())
+                    {
+                        <tr><td colspan="9" class="px-4 py-10 text-center text-gray-500">No hay pedidos</td></tr>
+                    }
+                    else
+                    {
+                        foreach (var p in Model)
+                        {
+                            string badge = p.EstadoPedido switch
+                            {
+                                "Pagado" => "bg-green-100 text-green-800",
+                                "Anulado" => "bg-red-100 text-red-700",
+                                _ => "bg-gray-100 text-gray-700"
+                            };
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-4 py-3">@p.Id</td>
+                                <td class="px-4 py-3">@p.Fecha.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td class="px-4 py-3">@p.ClienteNombre ?? ("Cliente " + p.ClienteId)</td>
+                                <td class="px-4 py-3">@p.UsuarioNombre ?? ("Usuario " + p.UsuarioId)</td>
+                                <td class="px-4 py-3 text-right">@p.Subtotal.ToString("N2")</td>
+                                <td class="px-4 py-3 text-right">@p.Impuestos.ToString("N2")</td>
+                                <td class="px-4 py-3 text-right font-semibold">@p.Total.ToString("N2")</td>
+                                <td class="px-4 py-3">
+                                    <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium @badge">
+                                        @p.EstadoPedido
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3">
+                                    <div class="flex justify-end gap-2">
+                                        <a asp-action="DetailsPedido" asp-route-id="@p.Id" class="btn-icon">
+                                            <i data-lucide="eye" class="w-4 h-4"></i>
+                                        </a>
+                                        <a asp-action="EditPedido" asp-route-id="@p.Id" class="btn-icon">
+                                            <i data-lucide="pencil" class="w-4 h-4"></i>
+                                        </a>
+                                        <a asp-action="DeletePedido" asp-route-id="@p.Id" class="btn-icon-danger">
+                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.querySelectorAll('.btn-icon').forEach(b=>b.classList.add(
+          'inline-flex','items-center','rounded-lg','border','border-gray-300',
+          'px-2.5','py-1.5','text-gray-700','hover:bg-gray-50'));
+        document.querySelectorAll('.btn-icon-danger').forEach(b=>b.classList.add(
+          'inline-flex','items-center','rounded-lg','border','border-red-300',
+          'px-2.5','py-1.5','text-red-600','hover:bg-red-50'));
+    </script>
+}
