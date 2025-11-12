@@ -1,162 +1,161 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using POS.Application.Interfaces;
 using POS.Domain.Entities;
 using POS.Web.ViewModels;
 
-namespace POS.Web.Controllers;
-
-/// <summary>
-/// Controlador de autenticación (Login, Registro, Logout)
-/// </summary>
-public class AuthController : Controller
+namespace POS.Web.Controllers
 {
-    private readonly SignInManager<ApplicationUser> _signInManager;
-    private readonly UserManager<ApplicationUser> _userManager;
-    private readonly ILogger<AuthController> _logger;
-
-    public AuthController(
-        SignInManager<ApplicationUser> signInManager,
-        UserManager<ApplicationUser> userManager,
-        ILogger<AuthController> logger)
-    {
-        _signInManager = signInManager;
-        _userManager = userManager;
-        _logger = logger;
-    }
-
-    /// <summary>
-    /// Mostrar formulario de login
-    /// </summary>
-    [HttpGet]
-    [AllowAnonymous] // Permite acceso sin autenticación
-    public IActionResult Login(string? returnUrl = null)
-    {
-        ViewData["ReturnUrl"] = returnUrl;
-        return View();
-    }
-
-    /// <summary>
-    /// Procesar login
-    /// </summary>
-    [HttpPost]
     [AllowAnonymous]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null)
+    public class AuthController : Controller
     {
-        ViewData["ReturnUrl"] = returnUrl;
+        private readonly SignInManager<ApplicationUser> _signInManager;
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IUserService _userService;
+        private readonly ILogger<AuthController> _logger;
 
-        if (!ModelState.IsValid)
+        public AuthController(
+            SignInManager<ApplicationUser> signInManager,
+            UserManager<ApplicationUser> userManager,
+            IUserService userService,
+            ILogger<AuthController> logger
+        )
         {
-            return View(model);
+            _signInManager = signInManager;
+            _userManager = userManager;
+            _userService = userService;
+            _logger = logger;
         }
 
-        // Intentar login
-        var result = await _signInManager.PasswordSignInAsync(
-            model.Email,
-            model.Password,
-            model.RememberMe,
-            lockoutOnFailure: true // Bloquea después de 5 intentos fallidos
-        );
-
-        if (result.Succeeded)
+        [HttpGet]
+        public IActionResult Login(string? returnUrl = null)
         {
-            _logger.LogInformation("Usuario {Email} inició sesión", model.Email);
+            ViewData["ReturnUrl"] = returnUrl;
+            return View();
+        }
 
-            // Redireccionar a la URL original o al home
-            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null)
+        {
+            ViewData["ReturnUrl"] = returnUrl;
+
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var result = await _signInManager.PasswordSignInAsync(
+                model.Email,
+                model.Password,
+                model.RememberMe,
+                lockoutOnFailure: true
+            );
+
+            if (result.Succeeded)
             {
-                return Redirect(returnUrl);
+                _logger.LogInformation("User {Email} signed in", model.Email);
+                if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+                    return Redirect(returnUrl);
+
+                return RedirectToAction("Index", "Home");
             }
 
-            return RedirectToAction("Index", "Home");
-        }
+            if (result.IsLockedOut)
+            {
+                _logger.LogWarning("User {Email} locked out", model.Email);
+                ModelState.AddModelError(
+                    string.Empty,
+                    "Tu cuenta está bloqueada por 5 minutos debido a múltiples intentos fallidos."
+                );
+                return View(model);
+            }
 
-        if (result.IsLockedOut)
-        {
-            _logger.LogWarning("Usuario {Email} bloqueado por intentos fallidos", model.Email);
-            ModelState.AddModelError(string.Empty, "Tu cuenta está bloqueada por 5 minutos debido a múltiples intentos fallidos.");
+            ModelState.AddModelError(string.Empty, "Email o contraseña incorrectos.");
             return View(model);
         }
 
-        ModelState.AddModelError(string.Empty, "Email o contraseña incorrectos.");
-        return View(model);
-    }
-
-    /// <summary>
-    /// Mostrar formulario de registro
-    /// </summary>
-    [HttpGet]
-    [AllowAnonymous]
-    public IActionResult Signup()
-    {
-        return View();
-    }
-
-    /// <summary>
-    /// Procesar registro de nuevo usuario
-    /// </summary>
-    [HttpPost]
-    [AllowAnonymous]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Signup(SignupViewModel model)
-    {
-        if (!ModelState.IsValid)
+        [HttpGet]
+        public IActionResult Signup()
         {
-            return View(model);
+            return View();
         }
 
-        // Crear nuevo usuario
-        var user = new ApplicationUser
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Signup(SignupViewModel model)
         {
-            UserName = model.Email,
-            Email = model.Email,
-            FullName = model.FullName,
-            EmailConfirmed = true // En producción esto debería ser false hasta confirmar email
-        };
+            if (!ModelState.IsValid)
+                return View(model);
 
-        var result = await _userManager.CreateAsync(user, model.Password);
+            var identityUser = new ApplicationUser
+            {
+                UserName = model.Email,
+                Email = model.Email,
+                FullName = model.FullName,
+                EmailConfirmed = true,
+            };
 
-        if (result.Succeeded)
-        {
-            _logger.LogInformation("Nuevo usuario registrado: {Email}", model.Email);
+            var createIdentity = await _userManager.CreateAsync(identityUser, model.Password);
+            if (!createIdentity.Succeeded)
+            {
+                foreach (var error in createIdentity.Errors)
+                    ModelState.AddModelError(string.Empty, error.Description);
+                return View(model);
+            }
 
-            // Asignar rol por defecto (Cajero)
-            await _userManager.AddToRoleAsync(user, "Cajero");
+            try
+            {
+                var usuario = new Usuario
+                {
+                    Nombre = model.FullName,
+                    EstadoUsuario = "Activo",
+                    RolId = null,
+                };
 
-            // Login automático después del registro
-            await _signInManager.SignInAsync(user, isPersistent: false);
+                await _userService.CreateAsync(usuario);
 
-            return RedirectToAction("Index", "Home");
+                await _userManager.AddToRoleAsync(identityUser, "Cajero");
+
+                await _signInManager.SignInAsync(identityUser, isPersistent: false);
+
+                _logger.LogInformation(
+                    "User {Email} registered and mirrored into Usuario",
+                    model.Email
+                );
+                return RedirectToAction("Index", "Home");
+            }
+            catch (System.Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Failed to mirror user into Usuario. Rolling back Identity user for {Email}",
+                    model.Email
+                );
+                await _userManager.DeleteAsync(identityUser);
+                ModelState.AddModelError(
+                    string.Empty,
+                    "No se pudo completar el registro. Intenta nuevamente."
+                );
+                return View(model);
+            }
         }
 
-        // Si hay errores, mostrarlos
-        foreach (var error in result.Errors)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Logout()
         {
-            ModelState.AddModelError(string.Empty, error.Description);
+            await _signInManager.SignOutAsync();
+            _logger.LogInformation("User signed out");
+            return RedirectToAction("Login", "Auth");
         }
 
-        return View(model);
-    }
-
-    /// <summary>
-    /// Cerrar sesión
-    /// </summary>
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Logout()
-    {
-        await _signInManager.SignOutAsync();
-        _logger.LogInformation("Usuario cerró sesión");
-        return RedirectToAction("Login", "Auth");
-    }
-
-    /// <summary>
-    /// Página de acceso denegado
-    /// </summary>
-    [HttpGet]
-    public IActionResult AccessDenied()
-    {
-        return View();
+        [HttpGet]
+        public IActionResult AccessDenied()
+        {
+            return View();
+        }
     }
 }
+

@@ -39,6 +39,7 @@ public static class DependencyInjection
         services.AddScoped<IClientRepository, ClientRepository>();
         services.AddScoped<IPedidoRepository, PedidoRepository>();
         services.AddSingleton<IFileStorageLocal, FileStorageLocal>();
+        services.AddScoped<IUserRepository, UserRepository>();
 
         return services;
     }

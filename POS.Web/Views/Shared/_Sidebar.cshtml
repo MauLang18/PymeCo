@@ -21,7 +21,7 @@
                 </a>
 
                 <!-- Productos -->
-                <a href="@Url.Action("Index", "Producto")" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors">
+                <a href="@Url.Action("ListProduct", "Product")" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors">
                     <i data-lucide="package" class="w-5 h-5"></i>
                     <span>Productos</span>
                 </a>
@@ -35,7 +35,7 @@
                 <!-- Clientes (solo visible si es Admin o Vendedor) -->
                 @if (mainRole == "Admin" || mainRole == "Vendedor")
                 {
-                    <a href="@Url.Action("Index", "Cliente")" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors">
+                    <a href="@Url.Action("ListClient", "Cliet")" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors">
                         <i data-lucide="users" class="w-5 h-5"></i>
                         <span>Clientes</span>
                     </a>
