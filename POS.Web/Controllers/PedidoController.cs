@@ -5,12 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using POS.Application.DTOs;
 using POS.Application.Interfaces;
 using POS.Domain.Entities;
-using System.Linq;
 using System.Security.Claims;
-using System.Threading;
-using System.Threading.Tasks;
-using System;
-using System.Collections.Generic;
 
 namespace POS.Web.Controllers
 {
@@ -41,6 +36,8 @@ namespace POS.Web.Controllers
 
             ViewBag.Clientes = new SelectList(clientes, "Id", "Name", clienteSelected);
             ViewBag.Productos = new SelectList(productos, "Id", "Name");
+
+            ViewBag.ProductosData = productos;
         }
 
         private int GetUsuarioIdActual()
