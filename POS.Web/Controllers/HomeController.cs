@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace POS.Web.Controllers;
 
+[Authorize] // ← Requiere login para todo
 public class HomeController : Controller
 {
     private readonly ILogger<HomeController> _logger;
@@ -19,14 +21,12 @@ public class HomeController : Controller
     public ActionResult About()
     {
         ViewBag.Message = "Your application description page.";
-
         return View();
     }
 
     public ActionResult Contact()
     {
         ViewBag.Message = "Your contact page.";
-
         return View();
     }
 }
