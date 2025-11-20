@@ -1,62 +1,103 @@
+@using System
 @using Microsoft.AspNetCore.Identity
 @using POS.Domain.Entities
 
 @inject SignInManager<ApplicationUser> SignInManager
-@inject UserManager<ApplicationUser> UserManager
 
-<aside class="w-64 h-screen bg-white border-r border-gray-200 flex flex-col justify-between">
-    <div>
-        <!-- Menú principal -->
-        <nav class="flex flex-col gap-2 mt-4 px-4 text-gray-700">
-            @if (SignInManager.IsSignedIn(User))
+@functions {
+    string Active(string controller, string action)
+    {
+        var c = (ViewContext.RouteData.Values["controller"] as string) ?? "";
+        var a = (ViewContext.RouteData.Values["action"] as string) ?? "";
+        return (c.Equals(controller, StringComparison.OrdinalIgnoreCase)
+             && a.Equals(action, StringComparison.OrdinalIgnoreCase))
+            ? "bg-blue-50 text-[color:var(--primary)]"
+            : "text-gray-500";
+    }
+}
+
+<aside class="bg-white flex flex-col min-h-screen w-64 shadow-md border border-gray-200">
+    <nav class="p-4 space-y-2 flex-1">
+
+        @if (SignInManager.IsSignedIn(User))
+        {
+            @* ==================== DASHBOARD ==================== *@
+            @* Solo Admin y Vendedor ven Dashboard *@
+            @if (User.IsInRole("Admin") || User.IsInRole("Vendedor"))
             {
-                var currentUser = await UserManager.GetUserAsync(User);
-                var userRoles = await UserManager.GetRolesAsync(currentUser!);
-                var mainRole = userRoles.FirstOrDefault() ?? "Usuario";
-
-                <!-- Dashboard -->
-                <a href="@Url.Action("Index", "Home")" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors">
+                <a href="@Url.Action("DashboardView", "Navigation")"
+                   class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-blue-50 hover:text-[color:var(--primary)] transition-colors @Active("Navigation", "DashboardView")">
                     <i data-lucide="home" class="w-5 h-5"></i>
-                    <span>Dashboard</span>
+                    <span class="font-medium">Dashboard</span>
                 </a>
-
-                <!-- Productos -->
-                <a href="@Url.Action("ListProduct", "Product")" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors">
-                    <i data-lucide="package" class="w-5 h-5"></i>
-                    <span>Productos</span>
-                </a>
-
-                <!-- Pedidos -->
-                <a href="@Url.Action("Index", "Pedido")" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors">
-                    <i data-lucide="shopping-cart" class="w-5 h-5"></i>
-                    <span>Pedidos</span>
-                </a>
-
-                <!-- Clientes (solo visible si es Admin o Vendedor) -->
-                @if (mainRole == "Admin" || mainRole == "Vendedor")
-                {
-                    <a href="@Url.Action("ListClient", "Cliet")" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors">
-                        <i data-lucide="users" class="w-5 h-5"></i>
-                        <span>Clientes</span>
-                    </a>
-                }
-
-                <!-- Inventario (solo Admin) -->
-                @if (mainRole == "Admin")
-                {
-                    <a href="@Url.Action("Index", "Inventario")" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors">
-                        <i data-lucide="archive" class="w-5 h-5"></i>
-                        <span>Inventario</span>
-                    </a>
-                }
             }
-            else
+
+            @* ==================== PRODUCTOS ==================== *@
+            @* Todos pueden ver productos *@
+            <a href="@Url.Action("ListProduct", "Product")"
+               class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-blue-50 hover:text-[color:var(--primary)] transition-colors @Active("Product", "ListProduct")">
+                <i data-lucide="package" class="w-5 h-5"></i>
+                <span class="font-medium">Productos</span>
+            </a>
+
+            @* ==================== PEDIDOS ==================== *@
+            @* Admin y Cajero ven Pedidos (Vendedor NO) *@
+            @if (User.IsInRole("Admin") || User.IsInRole("Cajero"))
             {
-                <!-- Usuario NO autenticado -->
-                <p class="text-gray-400 text-sm px-3">Inicie sesión para acceder al panel</p>
+                <a href="@Url.Action("OrderView", "Navigation")"
+                   class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-blue-50 hover:text-[color:var(--primary)] transition-colors @Active("Navigation", "OrderView")">
+                    <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+                    <span class="font-medium">Pedidos</span>
+                </a>
             }
-        </nav>
-    </div>
 
-   
+            @* ==================== CLIENTES ==================== *@
+            @* Admin y Vendedor ven Clientes (Cajero NO) *@
+            @if (User.IsInRole("Admin") || User.IsInRole("Vendedor"))
+            {
+                <a href="@Url.Action("ListClient", "Client")"
+                   class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-blue-50 hover:text-[color:var(--primary)] transition-colors @Active("Client", "ListClient")">
+                    <i data-lucide="users" class="w-5 h-5"></i>
+                    <span class="font-medium">Clientes</span>
+                </a>
+            }
+
+            @* ==================== INVENTARIO ==================== *@
+            @* Solo Admin ve Inventario *@
+            @if (User.IsInRole("Admin"))
+            {
+                <a href="@Url.Action("InventarioView", "Navigation")"
+                   class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-blue-50 hover:text-[color:var(--primary)] transition-colors @Active("Navigation", "InventarioView")">
+                    <i data-lucide="library" class="w-5 h-5"></i>
+                    <span class="font-medium">Inventario</span>
+                </a>
+            }
+
+            @* ==================== LOGOUT ==================== *@
+            <div class="mt-8">
+                <form asp-controller="Auth" asp-action="Logout" method="post" class="w-full">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="w-full bg-red-500 text-white text-center px-4 py-2 rounded-full hover:bg-red-600 transition-colors flex items-center justify-center gap-2">
+                        <i data-lucide="log-out" class="w-4 h-4"></i>
+                        Cerrar Sesión
+                    </button>
+                </form>
+            </div>
+        }
+        else
+        {
+            @* ==================== SIN LOGIN ==================== *@
+            <div class="mt-8 flex flex-col gap-3">
+                <a href="@Url.Action("Signup", "Auth")"
+                   class="bg-[color:var(--primary)] text-white text-center px-4 py-2 rounded-full hover:bg-[color:var(--primary-dark)] transition-colors">
+                    Sign Up
+                </a>
+
+                <a href="@Url.Action("Login", "Auth")"
+                   class="bg-white border border-[color:var(--primary)] text-[color:var(--primary)] text-center px-4 py-2 rounded-full hover:bg-blue-50 transition-colors">
+                    Log In
+                </a>
+            </div>
+        }
+    </nav>
 </aside>

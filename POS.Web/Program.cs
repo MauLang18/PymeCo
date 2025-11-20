@@ -20,7 +20,7 @@ builder.Host.UseSerilog();
 
 // 2) Servicios
 builder.Services.AddControllersWithViews();
-builder.Services.AddInfrastructure(builder.Configuration); // ⬅️ (una sola vez)
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(
@@ -31,7 +31,7 @@ builder.Services.AddCors(options =>
 
 // Tus capas
 builder.Services.AddApplication();
-builder.Services.AddInfrastructure(builder.Configuration); // ⬅️ eliminado el duplicado
+builder.Services.AddInfrastructure(builder.Configuration); // ✅ Solo una vez
 
 // ========== CONFIGURACIÓN DE IDENTITY ==========
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
@@ -67,13 +67,13 @@ builder.Services.ConfigureApplicationCookie(options =>
 
 var app = builder.Build();
 
-// ========== SEED DE ROLES Y USUARIO ADMIN ==========
+// ========== SEED DE ROLES Y USUARIOS ==========
 using (var scope = app.Services.CreateScope())
 {
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 
-    await SeedRolesAndAdminUser(roleManager, userManager);
+    await SeedRolesAndUsers(roleManager, userManager);
 }
 // ==================================================
 
@@ -107,13 +107,15 @@ app.UseCors("AllowAll");
 app.UseAuthentication(); // Primero autenticación
 app.UseAuthorization();  // Luego autorización
 
-// Ensure the uploads folder exists
-Directory.CreateDirectory(Path.Combine(app.Environment.WebRootPath!, "uploads", "products"));
+// Crear directorio de uploads si no existe
+var uploadsPath = Path.Combine(app.Environment.WebRootPath!, "uploads", "products");
+if (!Directory.Exists(uploadsPath))
+{
+    Directory.CreateDirectory(uploadsPath);
+    Log.Information("Directorio de uploads creado: {Path}", uploadsPath);
+}
 
-// Ensure the uploads folder exists
-Directory.CreateDirectory(Path.Combine(app.Environment.WebRootPath!, "uploads", "products"));
-
-app.MapControllerRoute(name: "default", pattern: "{controller=Home}/{action=Index}/{id?}");
+app.MapControllerRoute(name: "default", pattern: "{controller=Auth}/{action=Login}/{id?}");
 
 // 4) Arranque + Flush de logs
 try
@@ -130,8 +132,8 @@ finally
     Log.CloseAndFlush();
 }
 
-// ========== MÉTODO PARA CREAR ROLES Y USUARIO ADMIN ==========
-static async Task SeedRolesAndAdminUser(
+// ========== MÉTODO PARA CREAR ROLES Y USUARIOS ==========
+static async Task SeedRolesAndUsers(
     RoleManager<IdentityRole> roleManager,
     UserManager<ApplicationUser> userManager)
 {
@@ -147,7 +149,7 @@ static async Task SeedRolesAndAdminUser(
         }
     }
 
-    // Crear usuario Admin si no existe
+    // ========== CREAR USUARIO ADMIN ==========
     var adminEmail = "admin@pos.com";
     var adminUser = await userManager.FindByEmailAsync(adminEmail);
 
@@ -168,6 +170,66 @@ static async Task SeedRolesAndAdminUser(
         {
             await userManager.AddToRoleAsync(adminUser, "Admin");
             Log.Information("Usuario Admin creado: {Email}", adminEmail);
+        }
+        else
+        {
+            Log.Error("Error al crear Admin: {Errors}", string.Join(", ", result.Errors.Select(e => e.Description)));
+        }
+    }
+
+    // ========== CREAR USUARIO VENDEDOR ==========
+    var vendedorEmail = "vendedor@pos.com";
+    var vendedorUser = await userManager.FindByEmailAsync(vendedorEmail);
+
+    if (vendedorUser == null)
+    {
+        vendedorUser = new ApplicationUser
+        {
+            UserName = vendedorEmail,
+            Email = vendedorEmail,
+            FullName = "María Vendedor",
+            EmailConfirmed = true,
+            IsActive = true
+        };
+
+        var result = await userManager.CreateAsync(vendedorUser, "Vendedor123!");
+
+        if (result.Succeeded)
+        {
+            await userManager.AddToRoleAsync(vendedorUser, "Vendedor");
+            Log.Information("Usuario Vendedor creado: {Email}", vendedorEmail);
+        }
+        else
+        {
+            Log.Error("Error al crear Vendedor: {Errors}", string.Join(", ", result.Errors.Select(e => e.Description)));
+        }
+    }
+
+    // ========== CREAR USUARIO CAJERO ==========
+    var cajeroEmail = "cajero@pos.com";
+    var cajeroUser = await userManager.FindByEmailAsync(cajeroEmail);
+
+    if (cajeroUser == null)
+    {
+        cajeroUser = new ApplicationUser
+        {
+            UserName = cajeroEmail,
+            Email = cajeroEmail,
+            FullName = "Juan Cajero",
+            EmailConfirmed = true,
+            IsActive = true
+        };
+
+        var result = await userManager.CreateAsync(cajeroUser, "Cajero123!");
+
+        if (result.Succeeded)
+        {
+            await userManager.AddToRoleAsync(cajeroUser, "Cajero");
+            Log.Information("Usuario Cajero creado: {Email}", cajeroEmail);
+        }
+        else
+        {
+            Log.Error("Error al crear Cajero: {Errors}", string.Join(", ", result.Errors.Select(e => e.Description)));
         }
     }
 }

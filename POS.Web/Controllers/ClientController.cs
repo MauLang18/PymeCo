@@ -29,7 +29,7 @@ public class ClientController : Controller
     /// </summary>
     [HttpGet]
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-    [Authorize(Roles = "Admin,Vendedor,Cajero")]
+    [Authorize(Roles = "Admin,Vendedor")]
     public async Task<IActionResult> ListClient(string? q, CancellationToken ct)
     {
         _logger.LogInformation("GET ListClient started. Query={Query}", q);
