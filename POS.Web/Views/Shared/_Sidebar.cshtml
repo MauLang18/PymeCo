@@ -1,63 +1,62 @@
-@using System
-@functions {
-    string Active(string controller, string action)
-    {
-        var c = (ViewContext.RouteData.Values["controller"] as string) ?? "";
-        var a = (ViewContext.RouteData.Values["action"] as string) ?? "";
-        return (c.Equals(controller, StringComparison.OrdinalIgnoreCase)
-             && a.Equals(action, StringComparison.OrdinalIgnoreCase))
-            ? "bg-blue-50 text-[color:var(--primary)]"
-            : "text-gray-500";
-    }
-}
+@using Microsoft.AspNetCore.Identity
+@using POS.Domain.Entities
 
-<aside class="bg-white flex flex-col min-h-screen w-64 shadow-md border border-gray-200">
-    <nav class="p-4 space-y-2 flex-1">
-        <!-- Dashboard -->
-        <a href="@Url.Action("DashboardView", "Navigation")"
-           class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-blue-50 hover:text-[color:var(--primary)] transition-colors @Active("Navigation", "DashboardView")">
-            <i data-lucide="home" class="w-5 h-5"></i>
-            <span class="font-medium">Dashboard</span>
-        </a>
+@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
 
-        <!-- Productos -->
-        <a href="@Url.Action("ListProduct", "Product")"
-           class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-blue-50 hover:text-[color:var(--primary)] transition-colors @Active("Product", "ListProduct")">
-            <i data-lucide="package" class="w-5 h-5"></i>
-            <span class="font-medium">Productos</span>
-        </a>
+<aside class="w-64 h-screen bg-white border-r border-gray-200 flex flex-col justify-between">
+    <div>
+        <!-- Menú principal -->
+        <nav class="flex flex-col gap-2 mt-4 px-4 text-gray-700">
+            @if (SignInManager.IsSignedIn(User))
+            {
+                var currentUser = await UserManager.GetUserAsync(User);
+                var userRoles = await UserManager.GetRolesAsync(currentUser!);
+                var mainRole = userRoles.FirstOrDefault() ?? "Usuario";
 
-        <!-- Pedidos -->
-        <a href="@Url.Action("Index", "Pedido")"
-           class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-blue-50 hover:text-[color:var(--primary)] transition-colors @Active("Pedido", "Index")">
-            <i data-lucide="shopping-cart" class="w-5 h-5"></i>
-            <span class="font-medium">Pedidos</span>
-        </a>
+                <!-- Dashboard -->
+                <a href="@Url.Action("Index", "Home")" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors">
+                    <i data-lucide="home" class="w-5 h-5"></i>
+                    <span>Dashboard</span>
+                </a>
 
-        <!-- Clientes -->
-        <a href="@Url.Action("ListClient", "Client")"
-           class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-blue-50 hover:text-[color:var(--primary)] transition-colors @Active("Client", "ListClient")">
-            <i data-lucide="users" class="w-5 h-5"></i>
-            <span class="font-medium">Clientes</span>
-        </a>
+                <!-- Productos -->
+                <a href="@Url.Action("ListProduct", "Product")" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors">
+                    <i data-lucide="package" class="w-5 h-5"></i>
+                    <span>Productos</span>
+                </a>
 
-        <!-- Inventario -->
-        <a href="@Url.Action("InventarioView", "Navigation")"
-           class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-blue-50 hover:text-[color:var(--primary)] transition-colors @Active("Navigation", "InventarioView")">
-            <i data-lucide="library" class="w-5 h-5"></i>
-            <span class="font-medium">Inventario</span>
-        </a>
+                <!-- Pedidos -->
+                <a href="@Url.Action("Index", "Pedido")" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors">
+                    <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+                    <span>Pedidos</span>
+                </a>
 
-        <!-- Auth -->
-        <div class="mt-8 flex flex-col gap-3">
-            <a href="@Url.Action("Signup", "Auth")"
-               class="bg-[color:var(--primary)] text-white text-center px-4 py-2 rounded-full hover:bg-[color:var(--primary-dark)] transition-colors">
-                Sign Up
-            </a>
-            <a href="@Url.Action("Login", "Auth")"
-               class="bg-white border border-[color:var(--primary)] text-[color:var(--primary)] text-center px-4 py-2 rounded-full hover:bg-blue-50 transition-colors">
-                Log In
-            </a>
-        </div>
-    </nav>
+                <!-- Clientes (solo visible si es Admin o Vendedor) -->
+                @if (mainRole == "Admin" || mainRole == "Vendedor")
+                {
+                    <a href="@Url.Action("ListClient", "Client")" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors">
+                        <i data-lucide="users" class="w-5 h-5"></i>
+                        <span>Clientes</span>
+                    </a>
+                }
+
+                <!-- Inventario (solo Admin) -->
+                @if (mainRole == "Admin")
+                {
+                    <a href="@Url.Action("Index", "Inventario")" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors">
+                        <i data-lucide="archive" class="w-5 h-5"></i>
+                        <span>Inventario</span>
+                    </a>
+                }
+            }
+            else
+            {
+                <!-- Usuario NO autenticado -->
+                <p class="text-gray-400 text-sm px-3">Inicie sesión para acceder al panel</p>
+            }
+        </nav>
+    </div>
+
+   
 </aside>
