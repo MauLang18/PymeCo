@@ -8,7 +8,7 @@ using System.IO;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1) Configurar Serilog ANTES de construir el host
+// Serilog first
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)
     .Enrich.FromLogContext()
@@ -23,13 +23,10 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddInfrastructure(builder.Configuration); // ⬅️ (una sola vez)
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy(
-        "AllowAll",
-        policy => policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()
-    );
+    options.AddPolicy("AllowAll", p => p.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
 });
 
-// Tus capas
+// Register layers
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration); // ⬅️ eliminado el duplicado
 
@@ -82,7 +79,7 @@ if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
 }
-else
+else if (!isTesting)
 {
     app.UseExceptionHandler("/error");
     app.UseHsts();
@@ -96,11 +93,8 @@ app.UseSerilogRequestLogging(opts =>
         "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
 });
 
-app.UseHttpsRedirection();
 app.UseStaticFiles();
-
 app.UseRouting();
-
 app.UseCors("AllowAll");
 
 // ⚠️ IMPORTANTE: El orden es crítico
@@ -115,7 +109,6 @@ Directory.CreateDirectory(Path.Combine(app.Environment.WebRootPath!, "uploads", 
 
 app.MapControllerRoute(name: "default", pattern: "{controller=Home}/{action=Index}/{id?}");
 
-// 4) Arranque + Flush de logs
 try
 {
     Log.Information("Starting POS.Web");
