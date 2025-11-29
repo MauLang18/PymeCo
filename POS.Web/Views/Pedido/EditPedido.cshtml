@@ -26,20 +26,18 @@
                         <select asp-for="ClienteId" asp-items="ViewBag.Clientes" class="w-full rounded-lg border-gray-300 focus:ring-blue-500 focus:border-blue-500" required></select>
                         <span asp-validation-for="ClienteId" class="text-red-600 text-sm"></span>
                     </div>
-
-                    <!-- Usuario combobox -->
                     <div>
-                        <label asp-for="UsuarioId" class="block text-sm font-medium text-gray-700 mb-1">Usuario</label>
-                        <select asp-for="UsuarioId" asp-items="ViewBag.Usuarios" class="w-full rounded-lg border-gray-300 focus:ring-blue-500 focus:border-blue-500" required></select>
-                        <span asp-validation-for="UsuarioId" class="text-red-600 text-sm"></span>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Usuario</label>
+                        <input value="@Model.UsuarioId" class="w-full rounded-lg border-gray-200 bg-gray-50 text-gray-600" disabled />
+                        <input type="hidden" asp-for="UsuarioId" />
                     </div>
-
                     <div>
                         <label asp-for="EstadoPedido" class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
                         <select asp-for="EstadoPedido" class="w-full rounded-lg border-gray-300 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="Pendiente" selected="@(Model.EstadoPedido == "Pendiente")">Pendiente</option>
-                            <option value="Pagado" selected="@(Model.EstadoPedido == "Pagado")">Pagado</option>
-                            <option value="Anulado" selected="@(Model.EstadoPedido == "Anulado")">Anulado</option>
+                            <option>Pending</option>
+                            <option selected="@(Model.EstadoPedido == "Pagado")">Pagado</option>
+                            <option selected="@(Model.EstadoPedido == "Anulado")">Anulado</option>
+                            <option selected="@(Model.EstadoPedido == "Pendiente")">Pendiente</option>
                         </select>
                     </div>
                 </div>
@@ -294,4 +292,3 @@
         });
     </script>
 }
-
