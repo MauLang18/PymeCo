@@ -12,8 +12,8 @@ using POS.Infrastructure.Persistence;
 namespace POS.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251112173758_AddIdentityTables")]
-    partial class AddIdentityTables
+    [Migration("20251129204942_AddNewDb")]
+    partial class AddNewDb
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -288,6 +288,129 @@ namespace POS.Infrastructure.Migrations
                     b.ToTable("Cliente", "dbo");
                 });
 
+            modelBuilder.Entity("POS.Domain.Entities.Pedido", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("Id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ClienteId")
+                        .HasColumnType("int")
+                        .HasColumnName("ClienteId");
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("Pendiente")
+                        .HasColumnName("EstadoPedido");
+
+                    b.Property<DateTime>("Fecha")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasColumnName("Fecha")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<decimal>("Impuestos")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("Impuestos");
+
+                    b.Property<decimal>("Subtotal")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("Subtotal");
+
+                    b.Property<decimal>("Total")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("Total");
+
+                    b.Property<int>("UsuarioId")
+                        .HasColumnType("int")
+                        .HasColumnName("UsuarioId");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClienteId")
+                        .HasDatabaseName("IX_Pedido_ClienteId");
+
+                    b.HasIndex("Estado")
+                        .HasDatabaseName("IX_Pedido_Estado");
+
+                    b.HasIndex("Fecha")
+                        .HasDatabaseName("IX_Pedido_Fecha");
+
+                    b.HasIndex("UsuarioId");
+
+                    b.ToTable("Pedido", "dbo");
+                });
+
+            modelBuilder.Entity("POS.Domain.Entities.PedidoDetalle", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("Id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Cantidad")
+                        .HasColumnType("int")
+                        .HasColumnName("Cantidad");
+
+                    b.Property<decimal>("Descuento")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("DescuentoPorc");
+
+                    b.Property<decimal>("ImpuestoPorc")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)")
+                        .HasDefaultValue(13m)
+                        .HasColumnName("ImpuestoPorc");
+
+                    b.Property<int>("PedidoId")
+                        .HasColumnType("int")
+                        .HasColumnName("PedidoId");
+
+                    b.Property<decimal>("PrecioUnit")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("PrecioUnitario");
+
+                    b.Property<int>("ProductoId")
+                        .HasColumnType("int")
+                        .HasColumnName("ProductoId");
+
+                    b.Property<decimal>("TotalLinea")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("TotalLinea");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PedidoId");
+
+                    b.HasIndex("ProductoId")
+                        .HasDatabaseName("IX_PedidoDetalle_ProductoId");
+
+                    b.ToTable("PedidoDetalle", "dbo");
+                });
+
             modelBuilder.Entity("POS.Domain.Entities.Product", b =>
                 {
                     b.Property<int>("Id")
@@ -352,6 +475,77 @@ namespace POS.Infrastructure.Migrations
                     b.ToTable("Producto", "dbo");
                 });
 
+            modelBuilder.Entity("POS.Domain.Entities.Rol", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("Id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("Nombre");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Nombre")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_Rol_Nombre");
+
+                    b.ToTable("Rol", "dbo");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Nombre = "Admin"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Nombre = "Vendedor"
+                        });
+                });
+
+            modelBuilder.Entity("POS.Domain.Entities.Usuario", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("Id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("EstadoUsuario")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasDefaultValue("Activo")
+                        .HasColumnName("EstadoUsuario");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)")
+                        .HasColumnName("Nombre");
+
+                    b.Property<int?>("RolId")
+                        .HasColumnType("int")
+                        .HasColumnName("RolId");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RolId")
+                        .HasDatabaseName("IX_Usuario_RolId");
+
+                    b.ToTable("Usuario", "dbo");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -401,6 +595,59 @@ namespace POS.Infrastructure.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("POS.Domain.Entities.Pedido", b =>
+                {
+                    b.HasOne("POS.Domain.Entities.Client", "Cliente")
+                        .WithMany()
+                        .HasForeignKey("ClienteId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("POS.Domain.Entities.Usuario", "Usuario")
+                        .WithMany()
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Cliente");
+
+                    b.Navigation("Usuario");
+                });
+
+            modelBuilder.Entity("POS.Domain.Entities.PedidoDetalle", b =>
+                {
+                    b.HasOne("POS.Domain.Entities.Pedido", "Pedido")
+                        .WithMany("Detalles")
+                        .HasForeignKey("PedidoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("POS.Domain.Entities.Product", "Producto")
+                        .WithMany()
+                        .HasForeignKey("ProductoId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Pedido");
+
+                    b.Navigation("Producto");
+                });
+
+            modelBuilder.Entity("POS.Domain.Entities.Usuario", b =>
+                {
+                    b.HasOne("POS.Domain.Entities.Rol", "Rol")
+                        .WithMany()
+                        .HasForeignKey("RolId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("Rol");
+                });
+
+            modelBuilder.Entity("POS.Domain.Entities.Pedido", b =>
+                {
+                    b.Navigation("Detalles");
                 });
 #pragma warning restore 612, 618
         }

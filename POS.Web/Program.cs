@@ -1,10 +1,10 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using System.IO;
+using Microsoft.AspNetCore.Identity;
 using POS.Application;
 using POS.Domain.Entities;
 using POS.Infrastructure;
 using POS.Infrastructure.Persistence;
 using Serilog;
-using System.IO;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,25 +31,26 @@ builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration); // ✅ Solo una vez
 
 // ========== CONFIGURACIÓN DE IDENTITY ==========
-builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
-{
-    // Configuración de contraseña
-    options.Password.RequireDigit = true;
-    options.Password.RequireLowercase = true;
-    options.Password.RequireUppercase = true;
-    options.Password.RequireNonAlphanumeric = false;
-    options.Password.RequiredLength = 6;
+builder
+    .Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+    {
+        // Configuración de contraseña
+        options.Password.RequireDigit = true;
+        options.Password.RequireLowercase = true;
+        options.Password.RequireUppercase = true;
+        options.Password.RequireNonAlphanumeric = false;
+        options.Password.RequiredLength = 6;
 
-    // Configuración de usuario
-    options.User.RequireUniqueEmail = true;
+        // Configuración de usuario
+        options.User.RequireUniqueEmail = true;
 
-    // Configuración de lockout (bloqueo por intentos fallidos)
-    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
-    options.Lockout.MaxFailedAccessAttempts = 5;
-    options.Lockout.AllowedForNewUsers = true;
-})
-.AddEntityFrameworkStores<AppDbContext>()
-.AddDefaultTokenProviders();
+        // Configuración de lockout (bloqueo por intentos fallidos)
+        options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+        options.Lockout.MaxFailedAccessAttempts = 5;
+        options.Lockout.AllowedForNewUsers = true;
+    })
+    .AddEntityFrameworkStores<AppDbContext>()
+    .AddDefaultTokenProviders();
 
 // Configuración de cookies de autenticación
 builder.Services.ConfigureApplicationCookie(options =>
@@ -60,6 +61,7 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.ExpireTimeSpan = TimeSpan.FromHours(8);
     options.SlidingExpiration = true;
 });
+
 // ===============================================
 
 var app = builder.Build();
@@ -72,17 +74,13 @@ using (var scope = app.Services.CreateScope())
 
     await SeedRolesAndUsers(roleManager, userManager);
 }
+
 // ==================================================
 
 // 3) Middlewares / pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
-}
-else if (!isTesting)
-{
-    app.UseExceptionHandler("/error");
-    app.UseHsts();
 }
 
 app.UseStatusCodePagesWithReExecute("/errors/{0}");
@@ -99,7 +97,7 @@ app.UseCors("AllowAll");
 
 // ⚠️ IMPORTANTE: El orden es crítico
 app.UseAuthentication(); // Primero autenticación
-app.UseAuthorization();  // Luego autorización
+app.UseAuthorization(); // Luego autorización
 
 // Crear directorio de uploads si no existe
 var uploadsPath = Path.Combine(app.Environment.WebRootPath!, "uploads", "products");
@@ -128,7 +126,8 @@ finally
 // ========== MÉTODO PARA CREAR ROLES Y USUARIOS ==========
 static async Task SeedRolesAndUsers(
     RoleManager<IdentityRole> roleManager,
-    UserManager<ApplicationUser> userManager)
+    UserManager<ApplicationUser> userManager
+)
 {
     // Crear roles si no existen
     string[] roles = { "Admin", "Cajero", "Vendedor" };
@@ -154,7 +153,7 @@ static async Task SeedRolesAndUsers(
             Email = adminEmail,
             FullName = "Administrador",
             EmailConfirmed = true,
-            IsActive = true
+            IsActive = true,
         };
 
         var result = await userManager.CreateAsync(adminUser, "Admin123!");
@@ -166,7 +165,10 @@ static async Task SeedRolesAndUsers(
         }
         else
         {
-            Log.Error("Error al crear Admin: {Errors}", string.Join(", ", result.Errors.Select(e => e.Description)));
+            Log.Error(
+                "Error al crear Admin: {Errors}",
+                string.Join(", ", result.Errors.Select(e => e.Description))
+            );
         }
     }
 
@@ -182,7 +184,7 @@ static async Task SeedRolesAndUsers(
             Email = vendedorEmail,
             FullName = "María Vendedor",
             EmailConfirmed = true,
-            IsActive = true
+            IsActive = true,
         };
 
         var result = await userManager.CreateAsync(vendedorUser, "Vendedor123!");
@@ -194,7 +196,10 @@ static async Task SeedRolesAndUsers(
         }
         else
         {
-            Log.Error("Error al crear Vendedor: {Errors}", string.Join(", ", result.Errors.Select(e => e.Description)));
+            Log.Error(
+                "Error al crear Vendedor: {Errors}",
+                string.Join(", ", result.Errors.Select(e => e.Description))
+            );
         }
     }
 
@@ -210,7 +215,7 @@ static async Task SeedRolesAndUsers(
             Email = cajeroEmail,
             FullName = "Juan Cajero",
             EmailConfirmed = true,
-            IsActive = true
+            IsActive = true,
         };
 
         var result = await userManager.CreateAsync(cajeroUser, "Cajero123!");
@@ -222,7 +227,10 @@ static async Task SeedRolesAndUsers(
         }
         else
         {
-            Log.Error("Error al crear Cajero: {Errors}", string.Join(", ", result.Errors.Select(e => e.Description)));
+            Log.Error(
+                "Error al crear Cajero: {Errors}",
+                string.Join(", ", result.Errors.Select(e => e.Description))
+            );
         }
     }
 }
