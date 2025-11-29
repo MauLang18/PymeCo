@@ -1,6 +1,11 @@
-@* Views/Shared/_Topbar.cshtml *@
-<header class="flex items-center justify-between p-4 bg-white shadow-sm">
-    <!-- Left -->
+@using Microsoft.AspNetCore.Identity
+@using POS.Domain.Entities
+
+@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
+
+<header class="flex items-center justify-between p-4 bg-white shadow-sm relative">
+    <!-- Left: Logo -->
     <div class="flex items-center gap-2">
         <h1 class="text-2xl font-bold cursor-pointer bg-clip-text text-transparent bg-gradient-to-r from-[color:var(--primary)] to-purple-400 ml-4">
             <a href="@Url.Action("Index", "Home")">Pyme Co.</a>
@@ -20,7 +25,7 @@
                    name="q"
                    type="text"
                    autocomplete="off"
-                   placeholder="Buscar productos�"
+                   placeholder="Buscar productosâ€¦"
                    class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full
                       focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)]" />
 
@@ -32,17 +37,81 @@
 
     <!-- Right -->
     <div class="flex items-center gap-4">
-        <button type="button" class="text-gray-600 hover:text-[color:var(--primary)] transition-colors">
-            <i data-lucide="bell" class="w-5 h-5"></i>
-        </button>
-        <button type="button" class="text-gray-600 hover:text-[color:var(--primary)] transition-colors">
-            <i data-lucide="settings" class="w-5 h-5"></i>
-        </button>
-        <div class="w-px h-6 bg-gray-300"></div>
-        <div class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 rounded-full px-3 py-1 transition-colors">
-            <img src="https://ui-avatars.com/api/?name=User&background=2563EB&color=fff" alt="User avatar" class="w-8 h-8 rounded-full" />
-            <span class="text-gray-700 font-medium">Admin</span>
-            <i data-lucide="chevron-down" class="w-4 h-4 text-gray-500"></i>
-        </div>
+        @if (SignInManager.IsSignedIn(User))
+        {
+            var currentUser = await UserManager.GetUserAsync(User);
+            var userRoles = await UserManager.GetRolesAsync(currentUser!);
+            var mainRole = userRoles.FirstOrDefault() ?? "Usuario";
+            var roleColor = mainRole switch
+            {
+                "Admin" => "bg-red-500",
+                "Vendedor" => "bg-yellow-500",
+                "Cajero" => "bg-blue-500",
+                _ => "bg-gray-500"
+            };
+
+            <button class="text-gray-600 hover:text-[color:var(--primary)] transition-colors">
+                <i data-lucide="bell" class="w-5 h-5"></i>
+            </button>
+            <button class="text-gray-600 hover:text-[color:var(--primary)] transition-colors">
+                <i data-lucide="settings" class="w-5 h-5"></i>
+            </button>
+
+            <div class="w-px h-6 bg-gray-300"></div>
+
+            <!-- Dropdown del usuario -->
+            <div class="relative" id="userDropdown">
+                <div id="userButton" class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 rounded-full px-3 py-1 transition-colors">
+                    <div class="w-8 h-8 rounded-full @roleColor flex items-center justify-center text-white font-bold">
+                        @currentUser!.FullName.Substring(0, 1).ToUpper()
+                    </div>
+                    <div class="flex flex-col items-start">
+                        <span class="text-gray-700 font-medium text-sm">@currentUser.FullName</span>
+                        <span class="text-xs text-gray-500">@mainRole</span>
+                    </div>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-gray-500"></i>
+                </div>
+
+                <!-- Dropdown Menu -->
+                <div id="userMenu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                    <div class="px-4 py-2 border-b border-gray-200">
+                        <p class="text-sm font-medium text-gray-700">@currentUser.FullName</p>
+                        <p class="text-xs text-gray-500">@currentUser.Email</p>
+                    </div>
+                    <form asp-controller="Auth" asp-action="Logout" method="post" class="w-full">
+                        <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2">
+                            <i data-lucide="log-out" class="w-4 h-4"></i>
+                            Cerrar SesiÃƒÂ³n
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <script>
+                document.addEventListener("DOMContentLoaded", function () {
+                    const userButton = document.getElementById("userButton");
+                    const userMenu = document.getElementById("userMenu");
+
+                    // Mostrar menÃƒÂº al pasar o hacer clic
+                    userButton.addEventListener("mouseenter", () => userMenu.classList.remove("hidden"));
+                    userButton.addEventListener("mouseleave", () => setTimeout(() => {
+                        if (!userMenu.matches(":hover")) userMenu.classList.add("hidden");
+                    }, 200));
+
+                    userMenu.addEventListener("mouseleave", () => userMenu.classList.add("hidden"));
+                    userMenu.addEventListener("mouseenter", () => userMenu.classList.remove("hidden"));
+                });
+            </script>
+        }
+        else
+        {
+            <!-- Usuario NO autenticado -->
+            <a href="@Url.Action("Login", "Auth")" class="text-[color:var(--primary)] hover:underline font-medium">
+                Log In
+            </a>
+            <a href="@Url.Action("Signup", "Auth")" class="bg-[color:var(--primary)] text-white p-5 px-4 py-2 rounded-full hover:bg-[color:var(--primary-dark)] transition-colors">
+                Sign Up
+            </a>
+        }
     </div>
 </header>

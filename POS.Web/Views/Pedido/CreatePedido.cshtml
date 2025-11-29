@@ -1,22 +1,25 @@
 ﻿@model POS.Application.DTOs.PedidoDto
+@using POS.Domain.Entities
+
 @{
     ViewData["Title"] = "Nuevo Pedido";
+    var productosData = ViewBag.ProductosData as IEnumerable<Product>;
 }
 
 <div class="max-w-7xl mx-auto space-y-6">
     <div class="flex items-center justify-between">
         <div>
             <h1 class="text-xl font-semibold text-gray-900">Nuevo Pedido</h1>
-            <p class="text-sm text-gray-500">Crea un pedido seleccionando cliente y agregando líneas.</p>
+            <p class="text-sm text-gray-500">Crea un pedido seleccionando cliente y agregando productos.</p>
         </div>
-        <a asp-action="Index" class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-gray-700 hover:bg-gray-100">Volver</a>
+        <a asp-action="Index"
+           class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-gray-700 hover:bg-gray-100">
+            Volver
+        </a>
     </div>
 
     <form asp-action="CreatePedido" method="post" id="formPedido" class="space-y-6">
         @Html.AntiForgeryToken()
-
-        <!-- Resumen de validación -->
-        <div asp-validation-summary="All" class="mb-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700"></div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <!-- Datos -->
@@ -25,20 +28,28 @@
                 <div class="space-y-4">
                     <div>
                         <label asp-for="ClienteId" class="block text-sm font-medium text-gray-700 mb-1">Cliente</label>
-                        <select asp-for="ClienteId" asp-items="ViewBag.Clientes" class="w-full rounded-lg border-gray-300 focus:ring-blue-500 focus:border-blue-500" required></select>
+                        <select asp-for="ClienteId"
+                                asp-items="ViewBag.Clientes"
+                                class="w-full rounded-lg border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                                required>
+                        </select>
                         <span asp-validation-for="ClienteId" class="text-red-600 text-sm"></span>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Usuario</label>
-                        <input value="@Model.UsuarioId" class="w-full rounded-lg border-gray-200 bg-gray-50 text-gray-600" disabled />
+                        <input value="@Model.UsuarioId"
+                               class="w-full rounded-lg border-gray-200 bg-gray-50 text-gray-600"
+                               disabled />
                         <input type="hidden" asp-for="UsuarioId" />
                     </div>
                     <div>
                         <label asp-for="EstadoPedido" class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
-                        <select asp-for="EstadoPedido" class="w-full rounded-lg border-gray-300 focus:ring-blue-500 focus:border-blue-500">
-                            <option>Pendiente</option>
-                            <option>Pagado</option>
-                            <option>Anulado</option>
+                        <select asp-for="EstadoPedido"
+                                class="w-full rounded-lg border-gray-300 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="Pendiente">Pendiente</option>
+                            <option value="Pagado">Pagado</option>
+                            <option value="Enviado">Enviado</option>
+                            <option value="Cancelado">Cancelado</option>
                         </select>
                     </div>
                 </div>
@@ -50,17 +61,28 @@
                 <div class="grid grid-cols-3 gap-4">
                     <div>
                         <label class="block text-sm text-gray-600 mb-1">Subtotal</label>
-                        <input id="Subtotal" class="w-full rounded-lg border-gray-300 text-right font-medium" readonly disabled />
+                        <input id="Subtotal"
+                               class="w-full rounded-lg border-gray-300 text-right font-medium"
+                               readonly disabled />
                     </div>
                     <div>
                         <label class="block text-sm text-gray-600 mb-1">Impuestos</label>
-                        <input id="Impuestos" class="w-full rounded-lg border-gray-300 text-right font-medium" readonly disabled />
+                        <input id="Impuestos"
+                               class="w-full rounded-lg border-gray-300 text-right font-medium"
+                               readonly disabled />
                     </div>
                     <div>
                         <label class="block text-sm text-gray-600 mb-1">Total</label>
-                        <input id="Total" class="w-full rounded-lg border-gray-300 text-right font-bold" readonly disabled />
+                        <input id="Total"
+                               class="w-full rounded-lg border-gray-300 text-right font-bold"
+                               readonly disabled />
                     </div>
                 </div>
+
+                <!-- Hidden para mandar al DTO -->
+                <input type="hidden" asp-for="Subtotal" id="SubtotalHidden" />
+                <input type="hidden" asp-for="Impuestos" id="ImpuestosHidden" />
+                <input type="hidden" asp-for="Total" id="TotalHidden" />
             </div>
         </div>
 
@@ -68,8 +90,10 @@
         <div class="rounded-xl border border-gray-200 bg-white">
             <div class="flex items-center justify-between p-4">
                 <h3 class="text-sm font-semibold text-gray-700">Detalles</h3>
-                <button type="button" id="btnOpenModal" class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-white hover:bg-blue-700">
-                    <i data-lucide="plus" class="w-4 h-4"></i> Agregar línea
+                <button type="button"
+                        id="btnOpenModal"
+                        class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-white hover:bg-blue-700">
+                    <i data-lucide="plus" class="w-4 h-4"></i> Agregar producto
                 </button>
             </div>
             <div class="overflow-x-auto">
@@ -79,67 +103,86 @@
                             <th class="px-4 py-3 font-medium">Producto</th>
                             <th class="px-4 py-3 font-medium text-right">Cant.</th>
                             <th class="px-4 py-3 font-medium text-right">Precio</th>
-                            <th class="px-4 py-3 font-medium text-right">Desc. %</th>
                             <th class="px-4 py-3 font-medium text-right">Imp. %</th>
                             <th class="px-4 py-3 font-medium text-right">Total línea</th>
                             <th class="px-4 py-3 font-medium text-right"></th>
                         </tr>
                     </thead>
-                    <tbody id="tbodyDetalles" class="divide-y divide-gray-100"></tbody>
+                    <tbody id="tbodyDetalles" class="divide-y divide-gray-100">
+                    </tbody>
                 </table>
             </div>
         </div>
 
         <div class="flex justify-end gap-3">
-            <button type="submit" class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
+            <button type="submit"
+                    class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
                 <i data-lucide="check" class="w-4 h-4"></i> Guardar
             </button>
-            <a asp-action="Index" class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50">
+            <a asp-action="Index"
+               class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50">
                 Cancelar
             </a>
         </div>
     </form>
 </div>
 
-<!-- Modal -->
+<!-- Modal: solo producto + cantidad -->
 <div id="modalDetalle" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/30">
     <div class="w-full max-w-2xl rounded-xl bg-white p-5 shadow-xl">
         <div class="flex items-center justify-between mb-3">
-            <h3 class="text-base font-semibold text-gray-900">Agregar detalle</h3>
-            <button type="button" class="text-gray-500 hover:text-gray-700" id="btnCloseModal"><i data-lucide="x" class="w-5 h-5"></i></button>
+            <h3 class="text-base font-semibold text-gray-900">Agregar producto</h3>
+            <button type="button"
+                    class="text-gray-500 hover:text-gray-700"
+                    id="btnCloseModal">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
         </div>
+
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Producto</label>
-                <select id="mdlProductoId" class="w-full rounded-lg border-gray-300" asp-items="ViewBag.Productos"></select>
+                <select id="mdlProductoId"
+                        class="w-full rounded-lg border-gray-300">
+                    <option value="">Seleccione un producto</option>
+                    @if (productosData != null)
+                    {
+                        foreach (var p in productosData)
+                        {
+                            <option value="@p.Id"
+                                    data-precio="@p.Price"
+                                    data-imp="@p.TaxPercent">
+                                @p.Name
+                            </option>
+                        }
+                    }
+                </select>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Cant.</label>
-                <input id="mdlCantidad" type="number" min="1" value="1" class="w-full rounded-lg border-gray-300 text-right" />
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Precio</label>
-                <input id="mdlPrecio" type="number" min="0" step="0.01" class="w-full rounded-lg border-gray-300 text-right" />
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Desc. %</label>
-                <input id="mdlDesc" type="number" min="0" step="0.01" value="0" class="w-full rounded-lg border-gray-300 text-right" />
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Imp. %</label>
-                <input id="mdlImp" type="number" min="0" step="0.01" value="13" class="w-full rounded-lg border-gray-300 text-right" />
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Total línea</label>
-                <input id="mdlTotalLinea" class="w-full rounded-lg border-gray-300 text-right font-medium" readonly />
+                <label class="block text-sm font-medium text-gray-700 mb-1">Cantidad</label>
+                <input id="mdlCantidad"
+                       type="number"
+                       min="1"
+                       value="1"
+                       class="w-full rounded-lg border-gray-300 text-right" />
             </div>
         </div>
 
         <div class="mt-4 flex items-center justify-between">
-            <small class="text-gray-500">Total = (Cant * Precio) × (1 − Desc/100) × (1 + Imp/100)</small>
+            <small class="text-gray-500">
+                Precio e impuestos se cargan automáticamente desde el producto.
+            </small>
             <div class="flex gap-2">
-                <button type="button" class="rounded-lg border border-gray-300 px-3 py-2 text-gray-700 hover:bg-gray-50" id="btnCloseModal2">Cerrar</button>
-                <button type="button" class="rounded-lg bg-blue-600 px-3 py-2 text-white hover:bg-blue-700" id="btnAddLinea">Agregar</button>
+                <button type="button"
+                        class="rounded-lg border border-gray-300 px-3 py-2 text-gray-700 hover:bg-gray-50"
+                        id="btnCloseModal2">
+                    Cerrar
+                </button>
+                <button type="button"
+                        class="rounded-lg bg-blue-600 px-3 py-2 text-white hover:bg-blue-700"
+                        id="btnAddLinea">
+                    Agregar
+                </button>
             </div>
         </div>
     </div>
@@ -149,107 +192,159 @@
     <partial name="_ValidationScriptsPartial" />
     <script>
         const modal = document.getElementById('modalDetalle');
-        const openModal = ()=>modal.classList.remove('hidden');
-        const closeModal = ()=>modal.classList.add('hidden');
+        const openModal = () => modal.classList.remove('hidden');
+        const closeModal = () => modal.classList.add('hidden');
+
         document.getElementById('btnOpenModal').addEventListener('click', openModal);
         document.getElementById('btnCloseModal').addEventListener('click', closeModal);
         document.getElementById('btnCloseModal2').addEventListener('click', closeModal);
 
         const tbody = document.getElementById('tbodyDetalles');
-        const fmt = n => (Number(n)||0).toFixed(2);
+        const fmt = n => (Number(n) || 0).toFixed(2);
 
-        function recalcResumen(){
-          let subtotal=0, impuestos=0, total=0;
-          tbody.querySelectorAll('tr').forEach(tr=>{
-            const tl=+tr.dataset.totalLinea||0;
-            const im=+tr.dataset.impMonto||0;
-            subtotal += (tl - im); impuestos += im; total += tl;
-          });
-          document.getElementById('Subtotal').value = fmt(subtotal);
-          document.getElementById('Impuestos').value = fmt(impuestos);
-          document.getElementById('Total').value = fmt(total);
-        }
-
-        function addLinea(prodId, prodText, cant, precio, desc, imp){
-          const bruto=cant*precio;
-          const conDesc=bruto*(1-(desc/100));
-          const totalLinea=conDesc*(1+(imp/100));
-          const impMonto=totalLinea-conDesc;
-
-          const idx = tbody.querySelectorAll('tr').length;
-          const tr=document.createElement('tr');
-          tr.className='hover:bg-gray-50';
-          tr.dataset.totalLinea=totalLinea;
-          tr.dataset.impMonto=impMonto;
-          tr.innerHTML=`
-            <td class="px-4 py-3">
-              <input type="hidden" name="Detalles[${idx}].ProductoId" value="${prodId}" />
-              <span>${prodText} (${prodId})</span>
-            </td>
-            <td class="px-4 py-3 text-right">
-              <input class="w-24 rounded-md border border-gray-300 text-right" type="number" min="1" name="Detalles[${idx}].Cantidad" value="${cant}" />
-            </td>
-            <td class="px-4 py-3 text-right">
-              <input class="w-28 rounded-md border border-gray-300 text-right" type="number" step="0.01" min="0" name="Detalles[${idx}].PrecioUnitario" value="${precio}" />
-            </td>
-            <td class="px-4 py-3 text-right">
-              <input class="w-24 rounded-md border border-gray-300 text-right" type="number" step="0.01" min="0" name="Detalles[${idx}].DescuentoPorc" value="${desc}" />
-            </td>
-            <td class="px-4 py-3 text-right">
-              <input class="w-24 rounded-md border border-gray-300 text-right" type="number" step="0.01" min="0" name="Detalles[${idx}].ImpuestoPorc" value="${imp}" />
-            </td>
-            <td class="px-4 py-3 text-right font-semibold">
-              <input class="w-28 rounded-md border border-gray-300 text-right" type="number" step="0.01" min="0" value="${fmt(totalLinea)}" readonly disabled />
-            </td>
-            <td class="px-4 py-3 text-right">
-              <button type="button" class="inline-flex items-center rounded-lg border border-red-300 px-2 py-1 text-red-600 hover:bg-red-50 js-del">Eliminar</button>
-            </td>`;
-          tbody.appendChild(tr); recalcResumen();
-        }
-
-        document.getElementById('btnAddLinea').addEventListener('click', ()=>{
-          const sel=document.getElementById('mdlProductoId');
-          const pid=sel.value, ptxt=sel.options[sel.selectedIndex]?.text||'Producto';
-          const cant=+document.getElementById('mdlCantidad').value||0;
-          const precio=+document.getElementById('mdlPrecio').value||0;
-          const desc=+document.getElementById('mdlDesc').value||0;
-          const imp =+document.getElementById('mdlImp').value||0;
-          if(!pid || cant<=0) return;
-          addLinea(pid, ptxt, cant, precio, desc, imp);
-          ['mdlCantidad','mdlPrecio','mdlDesc','mdlImp','mdlTotalLinea'].forEach(id=>document.getElementById(id).value = id==='mdlCantidad'?1:'');
-          closeModal();
-        });
-
-        tbody.addEventListener('click', e=>{
-          if(e.target.closest('.js-del')){
-            e.target.closest('tr').remove();
-            [...tbody.querySelectorAll('tr')].forEach((tr,i)=>{
-              tr.querySelectorAll('input[name]').forEach(inp=>{
-                inp.name = inp.name.replace(/Detalles\[\d+\]/, `Detalles[${i}]`);
-              });
+        function recalcResumen() {
+            let subtotal = 0, impuestos = 0, total = 0;
+            tbody.querySelectorAll('tr').forEach(tr => {
+                const tl = +tr.dataset.totalLinea || 0;
+                const im = +tr.dataset.impMonto || 0;
+                subtotal += (tl - im);
+                impuestos += im;
+                total += tl;
             });
+
+            document.getElementById('Subtotal').value = fmt(subtotal);
+            document.getElementById('Impuestos').value = fmt(impuestos);
+            document.getElementById('Total').value = fmt(total);
+
+            document.getElementById('SubtotalHidden').value = subtotal;
+            document.getElementById('ImpuestosHidden').value = impuestos;
+            document.getElementById('TotalHidden').value = total;
+        }
+
+        function addLinea(prodId, prodText, cant, precio, impPercent) {
+            const bruto = cant * precio;
+            const impMonto = bruto * (impPercent / 100);
+            const totalLinea = bruto + impMonto;
+
+            const idx = tbody.querySelectorAll('tr').length;
+            const tr = document.createElement('tr');
+            tr.className = 'hover:bg-gray-50';
+            tr.dataset.totalLinea = totalLinea;
+            tr.dataset.impMonto = impMonto;
+            tr.dataset.precio = precio;
+            tr.dataset.imp = impPercent;
+
+            tr.innerHTML = `
+                <td class="px-4 py-3">
+                    <input type="hidden" name="Detalles[${idx}].ProductoId" value="${prodId}" />
+                    <span>${prodText} (${prodId})</span>
+                </td>
+                <td class="px-4 py-3 text-right">
+                    <input class="w-24 rounded-md border border-gray-300 text-right"
+                           type="number" min="1"
+                           name="Detalles[${idx}].Cantidad"
+                           value="${cant}" />
+                </td>
+                <td class="px-4 py-3 text-right">
+                    <span>${fmt(precio)}</span>
+                    <input type="hidden"
+                           name="Detalles[${idx}].PrecioUnitario"
+                           value="${precio}" />
+                </td>
+                <td class="px-4 py-3 text-right">
+                    <span>${fmt(impPercent)}</span>
+                    <input type="hidden"
+                           name="Detalles[${idx}].ImpuestoPorc"
+                           value="${impPercent}" />
+                </td>
+                <td class="px-4 py-3 text-right font-semibold">
+                    <span class="js-total-linea">${fmt(totalLinea)}</span>
+                    <input type="hidden"
+                           name="Detalles[${idx}].TotalLinea"
+                           value="${totalLinea}" />
+                    <input type="hidden"
+                           name="Detalles[${idx}].DescuentoPorc"
+                           value="0" />
+                </td>
+                <td class="px-4 py-3 text-right">
+                    <button type="button"
+                            class="inline-flex items-center rounded-lg border border-red-300 px-2 py-1 text-red-600 hover:bg-red-50 js-del">
+                        Eliminar
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
             recalcResumen();
-          }
+        }
+
+        document.getElementById('btnAddLinea').addEventListener('click', () => {
+            const sel = document.getElementById('mdlProductoId');
+            const pid = sel.value;
+            const opt = sel.options[sel.selectedIndex];
+
+            if (!pid || !opt) return;
+
+            const ptxt = opt.text;
+            const precio = +opt.dataset.precio || 0;
+            const impPercent = +opt.dataset.imp || 0;
+            const cant = +document.getElementById('mdlCantidad').value || 0;
+
+            if (!pid || cant <= 0) return;
+
+            addLinea(pid, ptxt, cant, precio, impPercent);
+
+            // reset modal
+            document.getElementById('mdlCantidad').value = 1;
+            sel.value = "";
+            closeModal();
         });
 
-        tbody.addEventListener('input', e=>{
-          const tr=e.target.closest('tr');
-          const cant=+tr.querySelector('input[name*=".Cantidad"]').value||0;
-          const precio=+tr.querySelector('input[name*=".PrecioUnitario"]').value||0;
-          const desc=+tr.querySelector('input[name*=".DescuentoPorc"]').value||0;
-          const imp =+tr.querySelector('input[name*=".ImpuestoPorc"]').value||0;
-          const bruto=cant*precio, conDesc=bruto*(1-(desc/100)), total=conDesc*(1+(imp/100));
-          tr.dataset.totalLinea=total; tr.dataset.impMonto=total-conDesc;
-          const ui = tr.querySelector('input[readonly]');
-          if (ui) ui.value = fmt(total);
-          recalcResumen();
+        tbody.addEventListener('click', e => {
+            if (e.target.closest('.js-del')) {
+                e.target.closest('tr').remove();
+
+                // Reindexar names
+                [...tbody.querySelectorAll('tr')].forEach((tr, i) => {
+                    tr.querySelectorAll('input[name]').forEach(inp => {
+                        inp.name = inp.name.replace(/Detalles\[\d+\]/, `Detalles[${i}]`);
+                    });
+                });
+
+                recalcResumen();
+            }
         });
 
-        document.getElementById('formPedido').addEventListener('submit', (e)=>{
-          if (tbody.querySelectorAll('tr').length === 0) {
-            e.preventDefault();
-            alert('Debes agregar al menos un detalle.');
-          }
+        // Solo permitimos cambiar cantidad; precio/imp salen del producto
+        tbody.addEventListener('input', e => {
+            const input = e.target;
+            if (!input.name || !input.name.includes('.Cantidad')) return;
+
+            const tr = input.closest('tr');
+            const cant = +input.value || 0;
+            const precio = +tr.dataset.precio || 0;
+            const impPercent = +tr.dataset.imp || 0;
+
+            const bruto = cant * precio;
+            const impMonto = bruto * (impPercent / 100);
+            const total = bruto + impMonto;
+
+            tr.dataset.totalLinea = total;
+            tr.dataset.impMonto = impMonto;
+
+            const totalSpan = tr.querySelector('.js-total-linea');
+            if (totalSpan) totalSpan.textContent = fmt(total);
+
+            const totalHidden = tr.querySelector('input[name*=".TotalLinea"]');
+            if (totalHidden) totalHidden.value = total;
+
+            recalcResumen();
+        });
+
+        document.getElementById('formPedido').addEventListener('submit', e => {
+            if (tbody.querySelectorAll('tr').length === 0) {
+                e.preventDefault();
+                alert('Debes agregar al menos un producto al pedido.');
+            }
         });
     </script>
 }
