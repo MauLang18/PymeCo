@@ -19,6 +19,7 @@ public class PedidoConfiguration : IEntityTypeConfiguration<Pedido>
 
         builder.Property(p => p.UsuarioId)
                .HasColumnName("UsuarioId")
+               .HasMaxLength(450) // ✅ string de Identity
                .IsRequired();
 
         builder.Property(p => p.Fecha)
@@ -65,7 +66,6 @@ public class PedidoConfiguration : IEntityTypeConfiguration<Pedido>
                .HasForeignKey(d => d.PedidoId)
                .OnDelete(DeleteBehavior.Cascade);
 
-        // Índices útiles
         builder.HasIndex(p => p.Fecha).HasDatabaseName("IX_Pedido_Fecha");
         builder.HasIndex(p => p.Estado).HasDatabaseName("IX_Pedido_Estado");
         builder.HasIndex(p => p.ClienteId).HasDatabaseName("IX_Pedido_ClienteId");

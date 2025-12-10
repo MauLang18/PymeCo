@@ -333,8 +333,10 @@ namespace POS.Infrastructure.Migrations
                         .HasDefaultValue(0m)
                         .HasColumnName("Total");
 
-                    b.Property<int>("UsuarioId")
-                        .HasColumnType("int")
+                    b.Property<string>("UsuarioId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)")
                         .HasColumnName("UsuarioId");
 
                     b.HasKey("Id");
@@ -472,77 +474,6 @@ namespace POS.Infrastructure.Migrations
                     b.ToTable("Producto", "dbo");
                 });
 
-            modelBuilder.Entity("POS.Domain.Entities.Rol", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("Id");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Nombre")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasColumnName("Nombre");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Nombre")
-                        .IsUnique()
-                        .HasDatabaseName("UQ_Rol_Nombre");
-
-                    b.ToTable("Rol", "dbo");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Nombre = "Admin"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Nombre = "Vendedor"
-                        });
-                });
-
-            modelBuilder.Entity("POS.Domain.Entities.Usuario", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("Id");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("EstadoUsuario")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)")
-                        .HasDefaultValue("Activo")
-                        .HasColumnName("EstadoUsuario");
-
-                    b.Property<string>("Nombre")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)")
-                        .HasColumnName("Nombre");
-
-                    b.Property<int?>("RolId")
-                        .HasColumnType("int")
-                        .HasColumnName("RolId");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RolId")
-                        .HasDatabaseName("IX_Usuario_RolId");
-
-                    b.ToTable("Usuario", "dbo");
-                });
-
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -602,7 +533,7 @@ namespace POS.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.HasOne("POS.Domain.Entities.Usuario", "Usuario")
+                    b.HasOne("POS.Domain.Entities.ApplicationUser", "Usuario")
                         .WithMany()
                         .HasForeignKey("UsuarioId")
                         .OnDelete(DeleteBehavior.NoAction)
@@ -630,16 +561,6 @@ namespace POS.Infrastructure.Migrations
                     b.Navigation("Pedido");
 
                     b.Navigation("Producto");
-                });
-
-            modelBuilder.Entity("POS.Domain.Entities.Usuario", b =>
-                {
-                    b.HasOne("POS.Domain.Entities.Rol", "Rol")
-                        .WithMany()
-                        .HasForeignKey("RolId")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.Navigation("Rol");
                 });
 
             modelBuilder.Entity("POS.Domain.Entities.Pedido", b =>
