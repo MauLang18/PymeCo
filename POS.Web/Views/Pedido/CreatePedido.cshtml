@@ -4,6 +4,7 @@
 @{
     ViewData["Title"] = "Nuevo Pedido";
     var productosData = ViewBag.ProductosData as IEnumerable<Product>;
+    var usuarioNombre = ViewBag.UsuarioNombre as string ?? "Usuario";
 }
 
 <div class="max-w-7xl mx-auto space-y-6">
@@ -37,7 +38,7 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Usuario</label>
-                        <input value="@Model.UsuarioId"
+                        <input value="@usuarioNombre"
                                class="w-full rounded-lg border-gray-200 bg-gray-50 text-gray-600"
                                disabled />
                         <input type="hidden" asp-for="UsuarioId" />
@@ -127,8 +128,8 @@
     </form>
 </div>
 
-<!-- Modal: solo producto + cantidad -->
-<div id="modalDetalle" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/30">
+<!-- Modal -->
+<div id="modalDetalle" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/30">
     <div class="w-full max-w-2xl rounded-xl bg-white p-5 shadow-xl">
         <div class="flex items-center justify-between mb-3">
             <h3 class="text-base font-semibold text-gray-900">Agregar producto</h3>
@@ -145,14 +146,15 @@
                 <select id="mdlProductoId"
                         class="w-full rounded-lg border-gray-300">
                     <option value="">Seleccione un producto</option>
-                    @if (productosData != null)
+                    @if (productosData != null && productosData.Any())
                     {
                         foreach (var p in productosData)
                         {
                             <option value="@p.Id"
-                                    data-precio="@p.Price"
-                                    data-imp="@p.TaxPercent">
-                                @p.Name
+                                    data-precio="@p.Price.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                                    data-imp="@p.TaxPercent.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                                    data-stock="@p.Stock">
+                                @p.Name (Stock: @p.Stock)
                             </option>
                         }
                     }
@@ -163,8 +165,10 @@
                 <input id="mdlCantidad"
                        type="number"
                        min="1"
+                       max="999999"
                        value="1"
                        class="w-full rounded-lg border-gray-300 text-right" />
+                <small id="stockWarning" class="text-red-600 hidden">Stock insuficiente</small>
             </div>
         </div>
 
@@ -201,6 +205,39 @@
 
         const tbody = document.getElementById('tbodyDetalles');
         const fmt = n => (Number(n) || 0).toFixed(2);
+
+        // Validar stock cuando cambia el producto o la cantidad
+        const mdlProductoId = document.getElementById('mdlProductoId');
+        const mdlCantidad = document.getElementById('mdlCantidad');
+        const stockWarning = document.getElementById('stockWarning');
+        const btnAddLinea = document.getElementById('btnAddLinea');
+
+        function validateStock() {
+            const sel = mdlProductoId;
+            const opt = sel.options[sel.selectedIndex];
+            const stock = +(opt?.dataset?.stock || 0);
+            const cant = +mdlCantidad.value || 0;
+
+            if (opt && opt.value && cant > stock) {
+                stockWarning.classList.remove('hidden');
+                stockWarning.textContent = `Stock disponible: ${stock}`;
+                btnAddLinea.disabled = true;
+                btnAddLinea.classList.add('opacity-50', 'cursor-not-allowed');
+                mdlCantidad.max = stock;
+                return false;
+            } else {
+                stockWarning.classList.add('hidden');
+                btnAddLinea.disabled = false;
+                btnAddLinea.classList.remove('opacity-50', 'cursor-not-allowed');
+                if (opt && opt.value) {
+                    mdlCantidad.max = stock;
+                }
+                return true;
+            }
+        }
+
+        mdlProductoId.addEventListener('change', validateStock);
+        mdlCantidad.addEventListener('input', validateStock);
 
         function recalcResumen() {
             let subtotal = 0, impuestos = 0, total = 0;
@@ -277,8 +314,8 @@
             recalcResumen();
         }
 
-        document.getElementById('btnAddLinea').addEventListener('click', () => {
-            const sel = document.getElementById('mdlProductoId');
+        btnAddLinea.addEventListener('click', () => {
+            const sel = mdlProductoId;
             const pid = sel.value;
             const opt = sel.options[sel.selectedIndex];
 
@@ -287,15 +324,22 @@
             const ptxt = opt.text;
             const precio = +opt.dataset.precio || 0;
             const impPercent = +opt.dataset.imp || 0;
-            const cant = +document.getElementById('mdlCantidad').value || 0;
+            const cant = +mdlCantidad.value || 0;
 
             if (!pid || cant <= 0) return;
+
+            // Validar stock antes de agregar
+            if (!validateStock()) {
+                alert('La cantidad solicitada supera el stock disponible.');
+                return;
+            }
 
             addLinea(pid, ptxt, cant, precio, impPercent);
 
             // reset modal
-            document.getElementById('mdlCantidad').value = 1;
+            mdlCantidad.value = 1;
             sel.value = "";
+            stockWarning.classList.add('hidden');
             closeModal();
         });
 
