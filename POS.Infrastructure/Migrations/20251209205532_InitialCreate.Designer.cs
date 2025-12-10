@@ -12,8 +12,8 @@ using POS.Infrastructure.Persistence;
 namespace POS.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251129204942_AddNewDb")]
-    partial class AddNewDb
+    [Migration("20251209205532_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

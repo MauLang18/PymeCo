@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using POS.Application.DTOs;
@@ -14,21 +15,23 @@ namespace POS.Web.Controllers
         private readonly IPedidoService _pedidoService;
         private readonly IClientService _clientService;
         private readonly IProductService _productService;
+        private readonly UserManager<ApplicationUser> _userManager;
         private readonly ILogger<PedidoController> _logger;
 
         public PedidoController(
             IPedidoService pedidoService,
             IClientService clientService,
             IProductService productService,
+            UserManager<ApplicationUser> userManager,
             ILogger<PedidoController> logger)
         {
             _pedidoService = pedidoService;
             _clientService = clientService;
             _productService = productService;
+            _userManager = userManager;
             _logger = logger;
         }
 
-        // ---------- Helpers ----------
         private async Task CargarCombosAsync(int? clienteSelected = null)
         {
             var clientes = await _clientService.ListAsync();
@@ -36,7 +39,6 @@ namespace POS.Web.Controllers
 
             ViewBag.Clientes = new SelectList(clientes, "Id", "Name", clienteSelected);
             ViewBag.Productos = new SelectList(productos, "Id", "Name");
-
             ViewBag.ProductosData = productos;
         }
 
@@ -44,6 +46,12 @@ namespace POS.Web.Controllers
         {
             var claim = User.FindFirstValue("UsuarioId") ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
             return int.TryParse(claim, out var id) ? id : 1;
+        }
+
+        private async Task<string> GetUsuarioNombreActualAsync()
+        {
+            var identityUser = await _userManager.GetUserAsync(User);
+            return identityUser?.FullName ?? identityUser?.UserName ?? "Usuario";
         }
 
         private static PedidoDto MapToDto(Pedido p)
@@ -88,7 +96,6 @@ namespace POS.Web.Controllers
             }
         }
 
-        // ---------- List ----------
         public async Task<IActionResult> Index(string estado, CancellationToken ct)
         {
             var filtro = string.IsNullOrWhiteSpace(estado) ? null : estado;
@@ -97,7 +104,6 @@ namespace POS.Web.Controllers
             return View("ListPedido", listDto);
         }
 
-        // ---------- Details ----------
         [HttpGet]
         public async Task<IActionResult> DetailsPedido(int id, CancellationToken ct)
         {
@@ -106,16 +112,22 @@ namespace POS.Web.Controllers
             return View("DetailsPedido", MapToDto(entity));
         }
 
-        // ---------- Create ----------
         [HttpGet]
         public async Task<IActionResult> CreatePedido()
         {
             await CargarCombosAsync();
+
+            var usuarioId = GetUsuarioIdActual();
+            var usuarioNombre = await GetUsuarioNombreActualAsync();
+
             var dto = new PedidoDto
             {
-                UsuarioId = GetUsuarioIdActual(),
+                UsuarioId = usuarioId,
                 EstadoPedido = "Pendiente"
             };
+
+            ViewBag.UsuarioNombre = usuarioNombre;
+
             return View("CreatePedido", dto);
         }
 
@@ -127,7 +139,6 @@ namespace POS.Web.Controllers
             if (string.IsNullOrWhiteSpace(dto.EstadoPedido))
                 dto.EstadoPedido = "Pendiente";
 
-            // Validaciones básicas para evitar caer en FK/valores inválidos
             if (dto.Detalles == null || dto.Detalles.Count == 0)
                 ModelState.AddModelError("", "Debes agregar al menos un detalle.");
             else if (dto.Detalles.Any(d => d.ProductoId <= 0 || d.Cantidad <= 0))
@@ -137,6 +148,7 @@ namespace POS.Web.Controllers
             {
                 LogModelStateErrors();
                 await CargarCombosAsync(dto.ClienteId);
+                ViewBag.UsuarioNombre = await GetUsuarioNombreActualAsync();
                 return View("CreatePedido", dto);
             }
 
@@ -157,10 +169,10 @@ namespace POS.Web.Controllers
             }
 
             await CargarCombosAsync(dto.ClienteId);
+            ViewBag.UsuarioNombre = await GetUsuarioNombreActualAsync();
             return View("CreatePedido", dto);
         }
 
-        // ---------- Edit ----------
         [HttpGet]
         public async Task<IActionResult> EditPedido(int id, CancellationToken ct)
         {
@@ -213,7 +225,6 @@ namespace POS.Web.Controllers
             return View("EditPedido", dto);
         }
 
-        // ---------- Delete ----------
         [HttpGet]
         public async Task<IActionResult> DeletePedido(int id, CancellationToken ct)
         {

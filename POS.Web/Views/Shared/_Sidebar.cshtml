@@ -40,15 +40,6 @@
                         <span>Clientes</span>
                     </a>
                 }
-
-                <!-- Inventario (solo Admin) -->
-                @if (mainRole == "Admin")
-                {
-                    <a href="@Url.Action("Index", "Inventario")" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors">
-                        <i data-lucide="archive" class="w-5 h-5"></i>
-                        <span>Inventario</span>
-                    </a>
-                }
             }
             else
             {
