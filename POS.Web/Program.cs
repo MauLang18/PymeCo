@@ -1,7 +1,9 @@
 ﻿using System.IO;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;  // ← AGREGADO para ToListAsync()
 using POS.Application;
 using POS.Domain.Entities;
+using POS.Domain.Enums;
 using POS.Infrastructure;
 using POS.Infrastructure.Persistence;
 using Serilog;
@@ -38,23 +40,18 @@ builder.Services.AddCors(options =>
 
 // Register layers
 builder.Services.AddApplication();
-builder.Services.AddInfrastructure(builder.Configuration); // ✅ Solo una vez
+builder.Services.AddInfrastructure(builder.Configuration);
 
 // ========== CONFIGURACIÓN DE IDENTITY ==========
 builder
     .Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
     {
-        // Configuración de contraseña
         options.Password.RequireDigit = true;
         options.Password.RequireLowercase = true;
         options.Password.RequireUppercase = true;
         options.Password.RequireNonAlphanumeric = false;
         options.Password.RequiredLength = 6;
-
-        // Configuración de usuario
         options.User.RequireUniqueEmail = true;
-
-        // Configuración de lockout (bloqueo por intentos fallidos)
         options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
         options.Lockout.MaxFailedAccessAttempts = 5;
         options.Lockout.AllowedForNewUsers = true;
@@ -62,7 +59,6 @@ builder
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
 
-// Configuración de cookies de autenticación
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.LoginPath = "/Auth/Login";
@@ -71,23 +67,24 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.ExpireTimeSpan = TimeSpan.FromHours(8);
     options.SlidingExpiration = true;
 });
-
 // ===============================================
 
 var app = builder.Build();
 
-// ========== SEED DE ROLES Y USUARIOS ==========
+// ========== SEED DE TODOS LOS DATOS ==========
 using (var scope = app.Services.CreateScope())
 {
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
     await SeedRolesAndUsers(roleManager, userManager);
+    await SeedProducts(context);
+    await SeedClients(context);
+    await SeedPedidos(context);
 }
-
 // ==================================================
 
-// 3) Middlewares / pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
@@ -97,19 +94,16 @@ app.UseStatusCodePagesWithReExecute("/errors/{0}");
 
 app.UseSerilogRequestLogging(opts =>
 {
-    opts.MessageTemplate =
-        "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
+    opts.MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
 });
 
 app.UseStaticFiles();
 app.UseRouting();
 app.UseCors("AllowAll");
 
-// ⚠️ IMPORTANTE: El orden es crítico
-app.UseAuthentication(); // Primero autenticación
-app.UseAuthorization(); // Luego autorización
+app.UseAuthentication();
+app.UseAuthorization();
 
-// Crear directorio de uploads si no existe
 var uploadsPath = Path.Combine(app.Environment.WebRootPath!, "uploads", "products");
 if (!Directory.Exists(uploadsPath))
 {
@@ -133,13 +127,12 @@ finally
     Log.CloseAndFlush();
 }
 
-// ========== MÉTODO PARA CREAR ROLES Y USUARIOS ==========
+// ========== SEED DE ROLES Y USUARIOS ==========
 static async Task SeedRolesAndUsers(
     RoleManager<IdentityRole> roleManager,
     UserManager<ApplicationUser> userManager
 )
 {
-    // Crear roles si no existen
     string[] roles = { "Admin", "Cajero", "Vendedor" };
 
     foreach (var roleName in roles)
@@ -147,17 +140,15 @@ static async Task SeedRolesAndUsers(
         if (!await roleManager.RoleExistsAsync(roleName))
         {
             await roleManager.CreateAsync(new IdentityRole(roleName));
-            Log.Information("Rol creado: {RoleName}", roleName);
+            Log.Information("✅ Rol creado: {RoleName}", roleName);
         }
     }
 
-    // ========== CREAR USUARIO ADMIN ==========
+    // Admin
     var adminEmail = "admin@pos.com";
-    var adminUser = await userManager.FindByEmailAsync(adminEmail);
-
-    if (adminUser == null)
+    if (await userManager.FindByEmailAsync(adminEmail) == null)
     {
-        adminUser = new ApplicationUser
+        var adminUser = new ApplicationUser
         {
             UserName = adminEmail,
             Email = adminEmail,
@@ -165,30 +156,19 @@ static async Task SeedRolesAndUsers(
             EmailConfirmed = true,
             IsActive = true,
         };
-
         var result = await userManager.CreateAsync(adminUser, "Admin123!");
-
         if (result.Succeeded)
         {
             await userManager.AddToRoleAsync(adminUser, "Admin");
-            Log.Information("Usuario Admin creado: {Email}", adminEmail);
-        }
-        else
-        {
-            Log.Error(
-                "Error al crear Admin: {Errors}",
-                string.Join(", ", result.Errors.Select(e => e.Description))
-            );
+            Log.Information("✅ Usuario Admin creado: {Email}", adminEmail);
         }
     }
 
-    // ========== CREAR USUARIO VENDEDOR ==========
+    // Vendedor
     var vendedorEmail = "vendedor@pos.com";
-    var vendedorUser = await userManager.FindByEmailAsync(vendedorEmail);
-
-    if (vendedorUser == null)
+    if (await userManager.FindByEmailAsync(vendedorEmail) == null)
     {
-        vendedorUser = new ApplicationUser
+        var vendedorUser = new ApplicationUser
         {
             UserName = vendedorEmail,
             Email = vendedorEmail,
@@ -196,30 +176,19 @@ static async Task SeedRolesAndUsers(
             EmailConfirmed = true,
             IsActive = true,
         };
-
         var result = await userManager.CreateAsync(vendedorUser, "Vendedor123!");
-
         if (result.Succeeded)
         {
             await userManager.AddToRoleAsync(vendedorUser, "Vendedor");
-            Log.Information("Usuario Vendedor creado: {Email}", vendedorEmail);
-        }
-        else
-        {
-            Log.Error(
-                "Error al crear Vendedor: {Errors}",
-                string.Join(", ", result.Errors.Select(e => e.Description))
-            );
+            Log.Information("✅ Usuario Vendedor creado: {Email}", vendedorEmail);
         }
     }
 
-    // ========== CREAR USUARIO CAJERO ==========
+    // Cajero
     var cajeroEmail = "cajero@pos.com";
-    var cajeroUser = await userManager.FindByEmailAsync(cajeroEmail);
-
-    if (cajeroUser == null)
+    if (await userManager.FindByEmailAsync(cajeroEmail) == null)
     {
-        cajeroUser = new ApplicationUser
+        var cajeroUser = new ApplicationUser
         {
             UserName = cajeroEmail,
             Email = cajeroEmail,
@@ -227,23 +196,399 @@ static async Task SeedRolesAndUsers(
             EmailConfirmed = true,
             IsActive = true,
         };
-
         var result = await userManager.CreateAsync(cajeroUser, "Cajero123!");
-
         if (result.Succeeded)
         {
             await userManager.AddToRoleAsync(cajeroUser, "Cajero");
-            Log.Information("Usuario Cajero creado: {Email}", cajeroEmail);
-        }
-        else
-        {
-            Log.Error(
-                "Error al crear Cajero: {Errors}",
-                string.Join(", ", result.Errors.Select(e => e.Description))
-            );
+            Log.Information("✅ Usuario Cajero creado: {Email}", cajeroEmail);
         }
     }
 }
 
-// ⭐ Hacer Program accesible para tests de integración
+// ========== SEED DE PRODUCTOS ==========
+static async Task SeedProducts(AppDbContext context)
+{
+    if (context.Products.Any())
+    {
+        Log.Information("Productos ya existen, saltando seed");
+        return;
+    }
+
+    var products = new List<Product>
+    {
+        new Product
+        {
+            Name = "Laptop Dell XPS 15",
+            CategoryId = 1,
+            Price = 1200.00m,
+            TaxPercent = 13.00m,
+            Stock = 10,
+            Status = ProductStatus.Active,
+            ImageUrl = null,
+            CreatedAt = DateTime.Now
+        },
+        new Product
+        {
+            Name = "Mouse Logitech MX Master 3",
+            CategoryId = 1,
+            Price = 99.99m,
+            TaxPercent = 13.00m,
+            Stock = 25,
+            Status = ProductStatus.Active,
+            ImageUrl = null,
+            CreatedAt = DateTime.Now
+        },
+        new Product
+        {
+            Name = "Teclado Mecánico Keychron K2",
+            CategoryId = 1,
+            Price = 89.99m,
+            TaxPercent = 13.00m,
+            Stock = 15,
+            Status = ProductStatus.Active,
+            ImageUrl = null,
+            CreatedAt = DateTime.Now
+        },
+        new Product
+        {
+            Name = "Monitor LG UltraWide 34\"",
+            CategoryId = 1,
+            Price = 499.99m,
+            TaxPercent = 13.00m,
+            Stock = 8,
+            Status = ProductStatus.Active,
+            ImageUrl = null,
+            CreatedAt = DateTime.Now
+        },
+        new Product
+        {
+            Name = "Silla Ergonómica Herman Miller",
+            CategoryId = 2,
+            Price = 899.00m,
+            TaxPercent = 13.00m,
+            Stock = 5,
+            Status = ProductStatus.Active,
+            ImageUrl = null,
+            CreatedAt = DateTime.Now
+        },
+        new Product
+        {
+            Name = "Escritorio Standing Desk",
+            CategoryId = 2,
+            Price = 549.99m,
+            TaxPercent = 13.00m,
+            Stock = 12,
+            Status = ProductStatus.Active,
+            ImageUrl = null,
+            CreatedAt = DateTime.Now
+        },
+        new Product
+        {
+            Name = "Webcam Logitech C920",
+            CategoryId = 1,
+            Price = 79.99m,
+            TaxPercent = 13.00m,
+            Stock = 20,
+            Status = ProductStatus.Active,
+            ImageUrl = null,
+            CreatedAt = DateTime.Now
+        },
+        new Product
+        {
+            Name = "Micrófono Blue Yeti",
+            CategoryId = 1,
+            Price = 129.99m,
+            TaxPercent = 13.00m,
+            Stock = 18,
+            Status = ProductStatus.Active,
+            ImageUrl = null,
+            CreatedAt = DateTime.Now
+        },
+        new Product
+        {
+            Name = "Audífonos Sony WH-1000XM5",
+            CategoryId = 1,
+            Price = 399.99m,
+            TaxPercent = 13.00m,
+            Stock = 22,
+            Status = ProductStatus.Active,
+            ImageUrl = null,
+            CreatedAt = DateTime.Now
+        },
+        new Product
+        {
+            Name = "Tablet iPad Air",
+            CategoryId = 1,
+            Price = 599.00m,
+            TaxPercent = 13.00m,
+            Stock = 14,
+            Status = ProductStatus.Active,
+            ImageUrl = null,
+            CreatedAt = DateTime.Now
+        }
+    };
+
+    context.Products.AddRange(products);
+    await context.SaveChangesAsync();
+    Log.Information("✅ Seeded {Count} productos", products.Count);
+}
+
+// ========== SEED DE CLIENTES ==========
+static async Task SeedClients(AppDbContext context)
+{
+    if (context.Clients.Any())
+    {
+        Log.Information("Clientes ya existen, saltando seed");
+        return;
+    }
+
+    var clients = new List<Client>
+    {
+        new Client
+        {
+            Name = "Carlos Rodríguez",
+            NationalId = "1-0234-0567",
+            Email = "carlos.rodriguez@email.com",
+            Phone = "8888-1234",
+            Address = "San José, Costa Rica",
+            CreatedAt = DateTime.Now
+        },
+        new Client
+        {
+            Name = "Ana María González",
+            NationalId = "2-0345-0678",
+            Email = "ana.gonzalez@email.com",
+            Phone = "8888-2345",
+            Address = "Heredia, Costa Rica",
+            CreatedAt = DateTime.Now
+        },
+        new Client
+        {
+            Name = "Roberto Jiménez",
+            NationalId = "1-0456-0789",
+            Email = "roberto.jimenez@email.com",
+            Phone = "8888-3456",
+            Address = "Alajuela, Costa Rica",
+            CreatedAt = DateTime.Now
+        },
+        new Client
+        {
+            Name = "Laura Pérez",
+            NationalId = "3-0567-0890",
+            Email = "laura.perez@email.com",
+            Phone = "8888-4567",
+            Address = "Cartago, Costa Rica",
+            CreatedAt = DateTime.Now
+        },
+        new Client
+        {
+            Name = "Miguel Ángel Vargas",
+            NationalId = "1-0678-0901",
+            Email = "miguel.vargas@email.com",
+            Phone = "8888-5678",
+            Address = "San José, Escazú",
+            CreatedAt = DateTime.Now
+        },
+        new Client
+        {
+            Name = "Patricia Mora",
+            NationalId = "2-0789-0123",
+            Email = "patricia.mora@email.com",
+            Phone = "8888-6789",
+            Address = "San José, Santa Ana",
+            CreatedAt = DateTime.Now
+        },
+        new Client
+        {
+            Name = "José Luis Ramírez",
+            NationalId = "1-0890-0234",
+            Email = "jose.ramirez@email.com",
+            Phone = "8888-7890",
+            Address = "Heredia, Santo Domingo",
+            CreatedAt = DateTime.Now
+        },
+        new Client
+        {
+            Name = "Carmen Solís",
+            NationalId = "3-0901-0345",
+            Email = "carmen.solis@email.com",
+            Phone = "8888-8901",
+            Address = "San José, Curridabat",
+            CreatedAt = DateTime.Now
+        }
+    };
+
+    context.Clients.AddRange(clients);
+    await context.SaveChangesAsync();
+    Log.Information("✅ Seeded {Count} clientes", clients.Count);
+}
+
+// ========== SEED DE PEDIDOS ==========
+static async Task SeedPedidos(AppDbContext context)
+{
+    if (context.Set<Pedido>().Any())
+    {
+        Log.Information("Pedidos ya existen, saltando seed");
+        return;
+    }
+
+    // Necesitamos IDs reales de clientes, productos y usuarios
+    var clientes = await context.Clients.Take(4).ToListAsync();
+    var productos = await context.Products.Take(7).ToListAsync();
+
+    if (!clientes.Any() || !productos.Any())
+    {
+        Log.Warning("⚠️ No hay clientes o productos, saltando seed de pedidos");
+        return;
+    }
+
+    // Verificar si hay usuarios, si no, crear uno
+    var usuarios = await context.Set<Usuario>().ToListAsync();
+    if (!usuarios.Any())
+    {
+        var nuevoUsuario = new Usuario
+        {
+            Nombre = "Sistema",
+            EstadoUsuario = "Activo",
+            RolId = null
+        };
+        context.Set<Usuario>().Add(nuevoUsuario);
+        await context.SaveChangesAsync();
+        usuarios = await context.Set<Usuario>().ToListAsync();
+        Log.Information("✅ Usuario por defecto creado para pedidos");
+    }
+
+    int usuarioId = usuarios.First().Id;
+
+    var pedidos = new List<Pedido>
+    {
+        // Pedido 1: Pendiente
+        new Pedido
+        {
+            ClienteId = clientes[0].Id,
+            UsuarioId = usuarioId,
+            Fecha = DateTime.Now.AddDays(-5),
+            Estado = "Pendiente",
+            Subtotal = 1389.98m,
+            Impuestos = 180.70m,
+            Total = 1570.68m,
+            Detalles = new List<PedidoDetalle>
+            {
+                new PedidoDetalle
+                {
+                    ProductoId = productos[0].Id, // Laptop
+                    Cantidad = 1,
+                    PrecioUnit = 1200.00m,
+                    Descuento = 0,
+                    ImpuestoPorc = 13.00m,
+                    TotalLinea = 1356.00m
+                },
+                new PedidoDetalle
+                {
+                    ProductoId = productos[1].Id, // Mouse
+                    Cantidad = 2,
+                    PrecioUnit = 99.99m,
+                    Descuento = 10,
+                    ImpuestoPorc = 13.00m,
+                    TotalLinea = 203.58m
+                }
+            }
+        },
+
+        // Pedido 2: Pagado
+        new Pedido
+        {
+            ClienteId = clientes[1].Id,
+            UsuarioId = usuarioId,
+            Fecha = DateTime.Now.AddDays(-3),
+            Estado = "Pagado",
+            Subtotal = 589.98m,
+            Impuestos = 76.70m,
+            Total = 666.68m,
+            Detalles = new List<PedidoDetalle>
+            {
+                new PedidoDetalle
+                {
+                    ProductoId = productos[3].Id, // Monitor
+                    Cantidad = 1,
+                    PrecioUnit = 499.99m,
+                    Descuento = 0,
+                    ImpuestoPorc = 13.00m,
+                    TotalLinea = 564.99m
+                },
+                new PedidoDetalle
+                {
+                    ProductoId = productos[2].Id, // Teclado
+                    Cantidad = 1,
+                    PrecioUnit = 89.99m,
+                    Descuento = 0,
+                    ImpuestoPorc = 13.00m,
+                    TotalLinea = 101.69m
+                }
+            }
+        },
+
+        // Pedido 3: Enviado
+        new Pedido
+        {
+            ClienteId = clientes[2].Id,
+            UsuarioId = usuarioId,
+            Fecha = DateTime.Now.AddDays(-1),
+            Estado = "Enviado",
+            Subtotal = 899.00m,
+            Impuestos = 116.87m,
+            Total = 1015.87m,
+            Detalles = new List<PedidoDetalle>
+            {
+                new PedidoDetalle
+                {
+                    ProductoId = productos[4].Id, // Silla
+                    Cantidad = 1,
+                    PrecioUnit = 899.00m,
+                    Descuento = 0,
+                    ImpuestoPorc = 13.00m,
+                    TotalLinea = 1015.87m
+                }
+            }
+        },
+
+        // Pedido 4: Pendiente reciente
+        new Pedido
+        {
+            ClienteId = clientes[3].Id,
+            UsuarioId = usuarioId,
+            Fecha = DateTime.Now,
+            Estado = "Pendiente",
+            Subtotal = 179.98m,
+            Impuestos = 23.40m,
+            Total = 203.38m,
+            Detalles = new List<PedidoDetalle>
+            {
+                new PedidoDetalle
+                {
+                    ProductoId = productos[1].Id, // Mouse
+                    Cantidad = 1,
+                    PrecioUnit = 99.99m,
+                    Descuento = 0,
+                    ImpuestoPorc = 13.00m,
+                    TotalLinea = 112.99m
+                },
+                new PedidoDetalle
+                {
+                    ProductoId = productos[6].Id, // Webcam
+                    Cantidad = 1,
+                    PrecioUnit = 79.99m,
+                    Descuento = 0,
+                    ImpuestoPorc = 13.00m,
+                    TotalLinea = 90.39m
+                }
+            }
+        }
+    };
+
+    context.Set<Pedido>().AddRange(pedidos);
+    await context.SaveChangesAsync();
+    Log.Information("✅ Seeded {Count} pedidos con sus detalles", pedidos.Count);
+}
+
 public partial class Program { }
