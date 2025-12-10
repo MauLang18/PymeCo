@@ -22,9 +22,8 @@ El desarrollo del front-end y vistas fue trabajado entre todos los integrantes.
 
 *Descripción del proyecto*
 
-Este sistema corresponde al proyecto final del curso SC-601 Programación Avanzada.
-Implementa un sistema web MVC para gestión de productos, clientes, inventario y pedidos tipo B2B.
-Incluye autenticación y autorización con ASP.NET Core Identity, cálculo automático de totales, autosuggest en búsqueda de productos, y actualizaciones de stock al confirmar pedidos.
+PymeCo es un sistema web MVC para la gestión de productos, clientes, inventario y pedidos tipo B2B.
+Implementa autenticación y autorización mediante ASP.NET Core Identity, incluye cálculo automático de totales, búsqueda inteligente de productos (autosuggest), administración de stock y módulo de pedidos con detalle.
 
 La aplicación sigue la arquitectura sugerida por el curso:
 
@@ -38,6 +37,9 @@ La aplicación sigue la arquitectura sugerida por el curso:
   
   ⦁	jQuery y AJAX para búsqueda y cálculo en vivo
 
+*Enlace al sistema en producción*
+
+[http://fidelitaspos.runasp.net/](http://fidelitaspos.runasp.net) 
 
 
 *Requisitos previos*
@@ -65,7 +67,7 @@ Pasos:
 
 git clone https://github.com/MauLang18/PymeCo.git
 
-Abrir la solución **POS.sln** en Visual Studio.
+Abrir la solución **PymeCo.sln** en Visual Studio.
 
 **2.	Configurar la cadena de conexión en POS.Web/appsettings.Development.json o appsettings.json.**
 Utilizar el siguiente formato y sustituir únicamente el nombre del servidor SQL de cada persona:
