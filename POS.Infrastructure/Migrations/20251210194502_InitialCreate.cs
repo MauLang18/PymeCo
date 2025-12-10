@@ -3,8 +3,6 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
-
 namespace POS.Infrastructure.Migrations
 {
     /// <inheritdoc />
@@ -98,20 +96,6 @@ namespace POS.Infrastructure.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Producto", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Rol",
-                schema: "dbo",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Nombre = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Rol", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -221,28 +205,6 @@ namespace POS.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Usuario",
-                schema: "dbo",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Nombre = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
-                    EstadoUsuario = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false, defaultValue: "Activo"),
-                    RolId = table.Column<int>(type: "int", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Usuario", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Usuario_Rol_RolId",
-                        column: x => x.RolId,
-                        principalSchema: "dbo",
-                        principalTable: "Rol",
-                        principalColumn: "Id");
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Pedido",
                 schema: "dbo",
                 columns: table => new
@@ -250,7 +212,7 @@ namespace POS.Infrastructure.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     ClienteId = table.Column<int>(type: "int", nullable: false),
-                    UsuarioId = table.Column<int>(type: "int", nullable: false),
+                    UsuarioId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
                     Fecha = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETDATE()"),
                     Subtotal = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 0m),
                     Impuestos = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 0m),
@@ -261,16 +223,15 @@ namespace POS.Infrastructure.Migrations
                 {
                     table.PrimaryKey("PK_Pedido", x => x.Id);
                     table.ForeignKey(
+                        name: "FK_Pedido_AspNetUsers_UsuarioId",
+                        column: x => x.UsuarioId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id");
+                    table.ForeignKey(
                         name: "FK_Pedido_Cliente_ClienteId",
                         column: x => x.ClienteId,
                         principalSchema: "dbo",
                         principalTable: "Cliente",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_Pedido_Usuario_UsuarioId",
-                        column: x => x.UsuarioId,
-                        principalSchema: "dbo",
-                        principalTable: "Usuario",
                         principalColumn: "Id");
                 });
 
@@ -305,16 +266,6 @@ namespace POS.Infrastructure.Migrations
                         principalSchema: "dbo",
                         principalTable: "Producto",
                         principalColumn: "Id");
-                });
-
-            migrationBuilder.InsertData(
-                schema: "dbo",
-                table: "Rol",
-                columns: new[] { "Id", "Nombre" },
-                values: new object[,]
-                {
-                    { 1, "Admin" },
-                    { 2, "Vendedor" }
                 });
 
             migrationBuilder.CreateIndex(
@@ -403,19 +354,6 @@ namespace POS.Infrastructure.Migrations
                 schema: "dbo",
                 table: "Producto",
                 column: "Nombre");
-
-            migrationBuilder.CreateIndex(
-                name: "UQ_Rol_Nombre",
-                schema: "dbo",
-                table: "Rol",
-                column: "Nombre",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Usuario_RolId",
-                schema: "dbo",
-                table: "Usuario",
-                column: "RolId");
         }
 
         /// <inheritdoc />
@@ -444,9 +382,6 @@ namespace POS.Infrastructure.Migrations
                 name: "AspNetRoles");
 
             migrationBuilder.DropTable(
-                name: "AspNetUsers");
-
-            migrationBuilder.DropTable(
                 name: "Pedido",
                 schema: "dbo");
 
@@ -455,15 +390,10 @@ namespace POS.Infrastructure.Migrations
                 schema: "dbo");
 
             migrationBuilder.DropTable(
+                name: "AspNetUsers");
+
+            migrationBuilder.DropTable(
                 name: "Cliente",
-                schema: "dbo");
-
-            migrationBuilder.DropTable(
-                name: "Usuario",
-                schema: "dbo");
-
-            migrationBuilder.DropTable(
-                name: "Rol",
                 schema: "dbo");
         }
     }

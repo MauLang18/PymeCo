@@ -42,10 +42,10 @@ namespace POS.Web.Controllers
             ViewBag.ProductosData = productos;
         }
 
-        private int GetUsuarioIdActual()
+        private string GetUsuarioIdActual()
         {
-            var claim = User.FindFirstValue("UsuarioId") ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
-            return int.TryParse(claim, out var id) ? id : 1;
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            return userId ?? throw new UnauthorizedAccessException("Usuario no autenticado");
         }
 
         private async Task<string> GetUsuarioNombreActualAsync()
@@ -62,7 +62,7 @@ namespace POS.Web.Controllers
                 ClienteId = p.ClienteId,
                 ClienteNombre = p.Cliente?.Name,
                 UsuarioId = p.UsuarioId,
-                UsuarioNombre = p.Usuario?.Nombre,
+                UsuarioNombre = p.Usuario?.FullName ?? p.Usuario?.UserName,
                 Fecha = p.Fecha,
                 Subtotal = p.Subtotal,
                 Impuestos = p.Impuestos,

@@ -1,6 +1,6 @@
 ﻿using System.IO;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;  // ← AGREGADO para ToListAsync()
+using Microsoft.EntityFrameworkCore;
 using POS.Application;
 using POS.Domain.Entities;
 using POS.Domain.Enums;
@@ -81,9 +81,8 @@ using (var scope = app.Services.CreateScope())
     await SeedRolesAndUsers(roleManager, userManager);
     await SeedProducts(context);
     await SeedClients(context);
-    await SeedPedidos(context);
+    await SeedPedidos(context, userManager);
 }
-// ==================================================
 
 if (app.Environment.IsDevelopment())
 {
@@ -140,7 +139,7 @@ static async Task SeedRolesAndUsers(
         if (!await roleManager.RoleExistsAsync(roleName))
         {
             await roleManager.CreateAsync(new IdentityRole(roleName));
-            Log.Information("✅ Rol creado: {RoleName}", roleName);
+            Log.Information("Rol creado: {RoleName}", roleName);
         }
     }
 
@@ -160,7 +159,7 @@ static async Task SeedRolesAndUsers(
         if (result.Succeeded)
         {
             await userManager.AddToRoleAsync(adminUser, "Admin");
-            Log.Information("✅ Usuario Admin creado: {Email}", adminEmail);
+            Log.Information("Usuario Admin creado: {Email}", adminEmail);
         }
     }
 
@@ -180,7 +179,7 @@ static async Task SeedRolesAndUsers(
         if (result.Succeeded)
         {
             await userManager.AddToRoleAsync(vendedorUser, "Vendedor");
-            Log.Information("✅ Usuario Vendedor creado: {Email}", vendedorEmail);
+            Log.Information("Usuario Vendedor creado: {Email}", vendedorEmail);
         }
     }
 
@@ -200,7 +199,7 @@ static async Task SeedRolesAndUsers(
         if (result.Succeeded)
         {
             await userManager.AddToRoleAsync(cajeroUser, "Cajero");
-            Log.Information("✅ Usuario Cajero creado: {Email}", cajeroEmail);
+            Log.Information("Usuario Cajero creado: {Email}", cajeroEmail);
         }
     }
 }
@@ -330,7 +329,7 @@ static async Task SeedProducts(AppDbContext context)
 
     context.Products.AddRange(products);
     await context.SaveChangesAsync();
-    Log.Information("✅ Seeded {Count} productos", products.Count);
+    Log.Information("Seeded {Count} productos", products.Count);
 }
 
 // ========== SEED DE CLIENTES ==========
@@ -420,11 +419,11 @@ static async Task SeedClients(AppDbContext context)
 
     context.Clients.AddRange(clients);
     await context.SaveChangesAsync();
-    Log.Information("✅ Seeded {Count} clientes", clients.Count);
+    Log.Information("Seeded {Count} clientes", clients.Count);
 }
 
 // ========== SEED DE PEDIDOS ==========
-static async Task SeedPedidos(AppDbContext context)
+static async Task SeedPedidos(AppDbContext context, UserManager<ApplicationUser> userManager)
 {
     if (context.Set<Pedido>().Any())
     {
@@ -432,33 +431,24 @@ static async Task SeedPedidos(AppDbContext context)
         return;
     }
 
-    // Necesitamos IDs reales de clientes, productos y usuarios
     var clientes = await context.Clients.Take(4).ToListAsync();
     var productos = await context.Products.Take(7).ToListAsync();
 
     if (!clientes.Any() || !productos.Any())
     {
-        Log.Warning("⚠️ No hay clientes o productos, saltando seed de pedidos");
+        Log.Warning("No hay clientes o productos, saltando seed de pedidos");
         return;
     }
 
-    // Verificar si hay usuarios, si no, crear uno
-    var usuarios = await context.Set<Usuario>().ToListAsync();
-    if (!usuarios.Any())
+    // Obtener un usuario de Identity en lugar de Usuario
+    var adminUser = await userManager.FindByEmailAsync("admin@pos.com");
+    if (adminUser == null)
     {
-        var nuevoUsuario = new Usuario
-        {
-            Nombre = "Sistema",
-            EstadoUsuario = "Activo",
-            RolId = null
-        };
-        context.Set<Usuario>().Add(nuevoUsuario);
-        await context.SaveChangesAsync();
-        usuarios = await context.Set<Usuario>().ToListAsync();
-        Log.Information("✅ Usuario por defecto creado para pedidos");
+        Log.Warning("No hay usuario admin, saltando seed de pedidos");
+        return;
     }
 
-    int usuarioId = usuarios.First().Id;
+    string usuarioId = adminUser.Id;
 
     var pedidos = new List<Pedido>
     {
@@ -476,7 +466,7 @@ static async Task SeedPedidos(AppDbContext context)
             {
                 new PedidoDetalle
                 {
-                    ProductoId = productos[0].Id, // Laptop
+                    ProductoId = productos[0].Id,
                     Cantidad = 1,
                     PrecioUnit = 1200.00m,
                     Descuento = 0,
@@ -485,7 +475,7 @@ static async Task SeedPedidos(AppDbContext context)
                 },
                 new PedidoDetalle
                 {
-                    ProductoId = productos[1].Id, // Mouse
+                    ProductoId = productos[1].Id,
                     Cantidad = 2,
                     PrecioUnit = 99.99m,
                     Descuento = 10,
@@ -509,7 +499,7 @@ static async Task SeedPedidos(AppDbContext context)
             {
                 new PedidoDetalle
                 {
-                    ProductoId = productos[3].Id, // Monitor
+                    ProductoId = productos[3].Id,
                     Cantidad = 1,
                     PrecioUnit = 499.99m,
                     Descuento = 0,
@@ -518,7 +508,7 @@ static async Task SeedPedidos(AppDbContext context)
                 },
                 new PedidoDetalle
                 {
-                    ProductoId = productos[2].Id, // Teclado
+                    ProductoId = productos[2].Id,
                     Cantidad = 1,
                     PrecioUnit = 89.99m,
                     Descuento = 0,
@@ -542,7 +532,7 @@ static async Task SeedPedidos(AppDbContext context)
             {
                 new PedidoDetalle
                 {
-                    ProductoId = productos[4].Id, // Silla
+                    ProductoId = productos[4].Id,
                     Cantidad = 1,
                     PrecioUnit = 899.00m,
                     Descuento = 0,
@@ -566,7 +556,7 @@ static async Task SeedPedidos(AppDbContext context)
             {
                 new PedidoDetalle
                 {
-                    ProductoId = productos[1].Id, // Mouse
+                    ProductoId = productos[1].Id,
                     Cantidad = 1,
                     PrecioUnit = 99.99m,
                     Descuento = 0,
@@ -575,7 +565,7 @@ static async Task SeedPedidos(AppDbContext context)
                 },
                 new PedidoDetalle
                 {
-                    ProductoId = productos[6].Id, // Webcam
+                    ProductoId = productos[6].Id,
                     Cantidad = 1,
                     PrecioUnit = 79.99m,
                     Descuento = 0,
@@ -588,7 +578,8 @@ static async Task SeedPedidos(AppDbContext context)
 
     context.Set<Pedido>().AddRange(pedidos);
     await context.SaveChangesAsync();
-    Log.Information("✅ Seeded {Count} pedidos con sus detalles", pedidos.Count);
+    Log.Information("Seeded {Count} pedidos con sus detalles", pedidos.Count);
 }
 
+// Hacer Program accesible para tests de integración
 public partial class Program { }
