@@ -13,26 +13,21 @@
     <title>@ViewData["Title"] - POS System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        .gradient-bg {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-    </style>
 </head>
-<body class="gradient-bg min-h-screen">
+<body class="bg-white min-h-screen">
     <div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div class="max-w-md w-full space-y-8">
             <!-- Logo / Header -->
             <div class="text-center">
-                <div class="mx-auto h-16 w-16 bg-white rounded-full flex items-center justify-center shadow-lg mb-4">
-                    <i data-lucide="user-plus" class="w-8 h-8 text-purple-600"></i>
+                <div class="mx-auto h-16 w-16 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-full flex items-center justify-center shadow-lg mb-4">
+                    <i data-lucide="user-plus" class="w-8 h-8 text-white"></i>
                 </div>
-                <h2 class="text-3xl font-extrabold text-white">Crear Cuenta</h2>
-                <p class="mt-2 text-sm text-purple-100">Únete a POS System</p>
+                <h2 class="text-3xl font-extrabold text-gray-900">Crear Cuenta</h2>
+                <p class="mt-2 text-sm text-gray-600">Únete a POS System</p>
             </div>
 
             <!-- Card Principal -->
-            <div class="bg-white rounded-2xl shadow-2xl p-8">
+            <div class="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
                 <!-- Mensaje Informativo -->
                 <div class="mb-6 p-4 rounded-lg bg-blue-50 border border-blue-200 flex items-start gap-3">
                     <i data-lucide="info" class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5"></i>
@@ -120,9 +115,6 @@
                         <span asp-validation-for="ConfirmPassword" class="text-red-600 text-xs mt-1 block"></span>
                     </div>
 
-                    <!-- Términos y Condiciones -->
-                    
-
                     <!-- Botón Signup -->
                     <div class="pt-2">
                         <button type="submit"
@@ -157,7 +149,7 @@
 
             <!-- Footer -->
             <div class="text-center">
-                <p class="text-xs text-purple-100">
+                <p class="text-xs text-gray-500">
                     © 2024 POS System. Todos los derechos reservados.
                 </p>
             </div>
