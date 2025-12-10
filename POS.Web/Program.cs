@@ -38,7 +38,7 @@ builder.Services.AddCors(options =>
 
 // Register layers
 builder.Services.AddApplication();
-builder.Services.AddInfrastructure(builder.Configuration); // ✅ Solo una vez
+builder.Services.AddInfrastructure(builder.Configuration);
 
 // ========== CONFIGURACIÓN DE IDENTITY ==========
 builder
@@ -105,9 +105,8 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseCors("AllowAll");
 
-// ⚠️ IMPORTANTE: El orden es crítico
-app.UseAuthentication(); // Primero autenticación
-app.UseAuthorization(); // Luego autorización
+app.UseAuthentication();
+app.UseAuthorization();
 
 // Crear directorio de uploads si no existe
 var uploadsPath = Path.Combine(app.Environment.WebRootPath!, "uploads", "products");
@@ -245,5 +244,5 @@ static async Task SeedRolesAndUsers(
     }
 }
 
-// ⭐ Hacer Program accesible para tests de integración
+// Hacer Program accesible para tests de integración
 public partial class Program { }
