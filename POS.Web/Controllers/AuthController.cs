@@ -91,7 +91,7 @@ namespace POS.Web.Controllers
                 Email = model.Email,
                 FullName = model.FullName,
                 EmailConfirmed = true,
-                IsActive = true
+                IsActive = false // ← INACTIVO hasta que Admin apruebe
             };
 
             var createResult = await _userManager.CreateAsync(identityUser, model.Password);
@@ -105,12 +105,14 @@ namespace POS.Web.Controllers
                 return View(model);
             }
 
-            await _userManager.AddToRoleAsync(identityUser, "Cajero");
+            // No se asigna
+            // El Admin debe asignar el rol desde el panel de Usuarios
 
-            await _signInManager.SignInAsync(identityUser, isPersistent: false);
+            _logger.LogInformation("User {Email} registered successfully (pending approval)", model.Email);
 
-            _logger.LogInformation("User {Email} registered successfully", model.Email);
-            return RedirectToAction("Index", "Home");
+            // NO hacer login automático
+            TempData["SuccessMessage"] = "Registro exitoso. Un administrador revisará tu cuenta pronto.";
+            return RedirectToAction("Login", "Auth");
         }
 
         [HttpPost]

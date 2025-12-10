@@ -71,18 +71,33 @@ builder.Services.ConfigureApplicationCookie(options =>
 
 var app = builder.Build();
 
-// ========== SEED DE TODOS LOS DATOS ==========
+// ========== APLICAR MIGRACIONES Y SEED DE DATOS ==========
 using (var scope = app.Services.CreateScope())
 {
-    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    try
+    {
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-    await SeedRolesAndUsers(roleManager, userManager);
-    await SeedProducts(context);
-    await SeedClients(context);
-    await SeedPedidos(context, userManager);
+        // IMPORTANTE: Aplicar migraciones primero
+        Log.Information("📦 Aplicando migraciones...");
+        await context.Database.MigrateAsync();
+        Log.Information("✅ Migraciones aplicadas correctamente");
+
+        // Ahora hacer el seeding
+        await SeedRolesAndUsers(roleManager, userManager);
+        await SeedProducts(context);
+        await SeedClients(context);
+        await SeedPedidos(context, userManager);
+    }
+    catch (Exception ex)
+    {
+        Log.Error(ex, "❌ Error durante migraciones o seeding");
+        // No lanzar la excepción, permitir que la app inicie de todas formas
+    }
 }
+// ==================================================
 
 if (app.Environment.IsDevelopment())
 {
@@ -139,7 +154,7 @@ static async Task SeedRolesAndUsers(
         if (!await roleManager.RoleExistsAsync(roleName))
         {
             await roleManager.CreateAsync(new IdentityRole(roleName));
-            Log.Information("Rol creado: {RoleName}", roleName);
+            Log.Information("✅ Rol creado: {RoleName}", roleName);
         }
     }
 
@@ -159,7 +174,7 @@ static async Task SeedRolesAndUsers(
         if (result.Succeeded)
         {
             await userManager.AddToRoleAsync(adminUser, "Admin");
-            Log.Information("Usuario Admin creado: {Email}", adminEmail);
+            Log.Information("✅ Usuario Admin creado: {Email}", adminEmail);
         }
     }
 
@@ -179,7 +194,7 @@ static async Task SeedRolesAndUsers(
         if (result.Succeeded)
         {
             await userManager.AddToRoleAsync(vendedorUser, "Vendedor");
-            Log.Information("Usuario Vendedor creado: {Email}", vendedorEmail);
+            Log.Information("✅ Usuario Vendedor creado: {Email}", vendedorEmail);
         }
     }
 
@@ -199,7 +214,7 @@ static async Task SeedRolesAndUsers(
         if (result.Succeeded)
         {
             await userManager.AddToRoleAsync(cajeroUser, "Cajero");
-            Log.Information("Usuario Cajero creado: {Email}", cajeroEmail);
+            Log.Information("✅ Usuario Cajero creado: {Email}", cajeroEmail);
         }
     }
 }
@@ -329,7 +344,7 @@ static async Task SeedProducts(AppDbContext context)
 
     context.Products.AddRange(products);
     await context.SaveChangesAsync();
-    Log.Information("Seeded {Count} productos", products.Count);
+    Log.Information("✅ Seeded {Count} productos", products.Count);
 }
 
 // ========== SEED DE CLIENTES ==========
@@ -419,167 +434,173 @@ static async Task SeedClients(AppDbContext context)
 
     context.Clients.AddRange(clients);
     await context.SaveChangesAsync();
-    Log.Information("Seeded {Count} clientes", clients.Count);
+    Log.Information("✅ Seeded {Count} clientes", clients.Count);
 }
 
 // ========== SEED DE PEDIDOS ==========
 static async Task SeedPedidos(AppDbContext context, UserManager<ApplicationUser> userManager)
 {
-    if (context.Set<Pedido>().Any())
+    try
     {
-        Log.Information("Pedidos ya existen, saltando seed");
-        return;
-    }
-
-    var clientes = await context.Clients.Take(4).ToListAsync();
-    var productos = await context.Products.Take(7).ToListAsync();
-
-    if (!clientes.Any() || !productos.Any())
-    {
-        Log.Warning("No hay clientes o productos, saltando seed de pedidos");
-        return;
-    }
-
-    // Obtener un usuario de Identity en lugar de Usuario
-    var adminUser = await userManager.FindByEmailAsync("admin@pos.com");
-    if (adminUser == null)
-    {
-        Log.Warning("No hay usuario admin, saltando seed de pedidos");
-        return;
-    }
-
-    string usuarioId = adminUser.Id;
-
-    var pedidos = new List<Pedido>
-    {
-        // Pedido 1: Pendiente
-        new Pedido
+        if (context.Set<Pedido>().Any())
         {
-            ClienteId = clientes[0].Id,
-            UsuarioId = usuarioId,
-            Fecha = DateTime.Now.AddDays(-5),
-            Estado = "Pendiente",
-            Subtotal = 1389.98m,
-            Impuestos = 180.70m,
-            Total = 1570.68m,
-            Detalles = new List<PedidoDetalle>
-            {
-                new PedidoDetalle
-                {
-                    ProductoId = productos[0].Id,
-                    Cantidad = 1,
-                    PrecioUnit = 1200.00m,
-                    Descuento = 0,
-                    ImpuestoPorc = 13.00m,
-                    TotalLinea = 1356.00m
-                },
-                new PedidoDetalle
-                {
-                    ProductoId = productos[1].Id,
-                    Cantidad = 2,
-                    PrecioUnit = 99.99m,
-                    Descuento = 10,
-                    ImpuestoPorc = 13.00m,
-                    TotalLinea = 203.58m
-                }
-            }
-        },
-
-        // Pedido 2: Pagado
-        new Pedido
-        {
-            ClienteId = clientes[1].Id,
-            UsuarioId = usuarioId,
-            Fecha = DateTime.Now.AddDays(-3),
-            Estado = "Pagado",
-            Subtotal = 589.98m,
-            Impuestos = 76.70m,
-            Total = 666.68m,
-            Detalles = new List<PedidoDetalle>
-            {
-                new PedidoDetalle
-                {
-                    ProductoId = productos[3].Id,
-                    Cantidad = 1,
-                    PrecioUnit = 499.99m,
-                    Descuento = 0,
-                    ImpuestoPorc = 13.00m,
-                    TotalLinea = 564.99m
-                },
-                new PedidoDetalle
-                {
-                    ProductoId = productos[2].Id,
-                    Cantidad = 1,
-                    PrecioUnit = 89.99m,
-                    Descuento = 0,
-                    ImpuestoPorc = 13.00m,
-                    TotalLinea = 101.69m
-                }
-            }
-        },
-
-        // Pedido 3: Enviado
-        new Pedido
-        {
-            ClienteId = clientes[2].Id,
-            UsuarioId = usuarioId,
-            Fecha = DateTime.Now.AddDays(-1),
-            Estado = "Enviado",
-            Subtotal = 899.00m,
-            Impuestos = 116.87m,
-            Total = 1015.87m,
-            Detalles = new List<PedidoDetalle>
-            {
-                new PedidoDetalle
-                {
-                    ProductoId = productos[4].Id,
-                    Cantidad = 1,
-                    PrecioUnit = 899.00m,
-                    Descuento = 0,
-                    ImpuestoPorc = 13.00m,
-                    TotalLinea = 1015.87m
-                }
-            }
-        },
-
-        // Pedido 4: Pendiente reciente
-        new Pedido
-        {
-            ClienteId = clientes[3].Id,
-            UsuarioId = usuarioId,
-            Fecha = DateTime.Now,
-            Estado = "Pendiente",
-            Subtotal = 179.98m,
-            Impuestos = 23.40m,
-            Total = 203.38m,
-            Detalles = new List<PedidoDetalle>
-            {
-                new PedidoDetalle
-                {
-                    ProductoId = productos[1].Id,
-                    Cantidad = 1,
-                    PrecioUnit = 99.99m,
-                    Descuento = 0,
-                    ImpuestoPorc = 13.00m,
-                    TotalLinea = 112.99m
-                },
-                new PedidoDetalle
-                {
-                    ProductoId = productos[6].Id,
-                    Cantidad = 1,
-                    PrecioUnit = 79.99m,
-                    Descuento = 0,
-                    ImpuestoPorc = 13.00m,
-                    TotalLinea = 90.39m
-                }
-            }
+            Log.Information("Pedidos ya existen, saltando seed");
+            return;
         }
-    };
 
-    context.Set<Pedido>().AddRange(pedidos);
-    await context.SaveChangesAsync();
-    Log.Information("Seeded {Count} pedidos con sus detalles", pedidos.Count);
+        var clientes = await context.Clients.Take(4).ToListAsync();
+        var productos = await context.Products.Take(7).ToListAsync();
+
+        if (!clientes.Any() || !productos.Any())
+        {
+            Log.Warning("⚠️ No hay clientes o productos, saltando seed de pedidos");
+            return;
+        }
+
+        // Obtener un usuario de Identity
+        var adminUser = await userManager.FindByEmailAsync("admin@pos.com");
+        if (adminUser == null)
+        {
+            Log.Warning("⚠️ No hay usuario admin, saltando seed de pedidos");
+            return;
+        }
+
+        string usuarioId = adminUser.Id;
+
+        var pedidos = new List<Pedido>
+        {
+            // Pedido 1: Pendiente
+            new Pedido
+            {
+                ClienteId = clientes[0].Id,
+                UsuarioId = usuarioId,
+                Fecha = DateTime.Now.AddDays(-5),
+                Estado = "Pendiente",
+                Subtotal = 1389.98m,
+                Impuestos = 180.70m,
+                Total = 1570.68m,
+                Detalles = new List<PedidoDetalle>
+                {
+                    new PedidoDetalle
+                    {
+                        ProductoId = productos[0].Id,
+                        Cantidad = 1,
+                        PrecioUnit = 1200.00m,
+                        Descuento = 0,
+                        ImpuestoPorc = 13.00m,
+                        TotalLinea = 1356.00m
+                    },
+                    new PedidoDetalle
+                    {
+                        ProductoId = productos[1].Id,
+                        Cantidad = 2,
+                        PrecioUnit = 99.99m,
+                        Descuento = 10,
+                        ImpuestoPorc = 13.00m,
+                        TotalLinea = 203.58m
+                    }
+                }
+            },
+
+            // Pedido 2: Pagado
+            new Pedido
+            {
+                ClienteId = clientes[1].Id,
+                UsuarioId = usuarioId,
+                Fecha = DateTime.Now.AddDays(-3),
+                Estado = "Pagado",
+                Subtotal = 589.98m,
+                Impuestos = 76.70m,
+                Total = 666.68m,
+                Detalles = new List<PedidoDetalle>
+                {
+                    new PedidoDetalle
+                    {
+                        ProductoId = productos[3].Id,
+                        Cantidad = 1,
+                        PrecioUnit = 499.99m,
+                        Descuento = 0,
+                        ImpuestoPorc = 13.00m,
+                        TotalLinea = 564.99m
+                    },
+                    new PedidoDetalle
+                    {
+                        ProductoId = productos[2].Id,
+                        Cantidad = 1,
+                        PrecioUnit = 89.99m,
+                        Descuento = 0,
+                        ImpuestoPorc = 13.00m,
+                        TotalLinea = 101.69m
+                    }
+                }
+            },
+
+            // Pedido 3: Enviado
+            new Pedido
+            {
+                ClienteId = clientes[2].Id,
+                UsuarioId = usuarioId,
+                Fecha = DateTime.Now.AddDays(-1),
+                Estado = "Enviado",
+                Subtotal = 899.00m,
+                Impuestos = 116.87m,
+                Total = 1015.87m,
+                Detalles = new List<PedidoDetalle>
+                {
+                    new PedidoDetalle
+                    {
+                        ProductoId = productos[4].Id,
+                        Cantidad = 1,
+                        PrecioUnit = 899.00m,
+                        Descuento = 0,
+                        ImpuestoPorc = 13.00m,
+                        TotalLinea = 1015.87m
+                    }
+                }
+            },
+
+            // Pedido 4: Pendiente reciente
+            new Pedido
+            {
+                ClienteId = clientes[3].Id,
+                UsuarioId = usuarioId,
+                Fecha = DateTime.Now,
+                Estado = "Pendiente",
+                Subtotal = 179.98m,
+                Impuestos = 23.40m,
+                Total = 203.38m,
+                Detalles = new List<PedidoDetalle>
+                {
+                    new PedidoDetalle
+                    {
+                        ProductoId = productos[1].Id,
+                        Cantidad = 1,
+                        PrecioUnit = 99.99m,
+                        Descuento = 0,
+                        ImpuestoPorc = 13.00m,
+                        TotalLinea = 112.99m
+                    },
+                    new PedidoDetalle
+                    {
+                        ProductoId = productos[6].Id,
+                        Cantidad = 1,
+                        PrecioUnit = 79.99m,
+                        Descuento = 0,
+                        ImpuestoPorc = 13.00m,
+                        TotalLinea = 90.39m
+                    }
+                }
+            }
+        };
+
+        context.Set<Pedido>().AddRange(pedidos);
+        await context.SaveChangesAsync();
+        Log.Information("✅ Seeded {Count} pedidos con sus detalles", pedidos.Count);
+    }
+    catch (Exception ex)
+    {
+        Log.Error(ex, "❌ Error al crear pedidos de prueba");
+    }
 }
 
-// Hacer Program accesible para tests de integración
 public partial class Program { }
