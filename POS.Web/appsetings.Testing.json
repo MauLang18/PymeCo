@@ -41,7 +41,7 @@
   "AllowedHosts": "*",
 
   "ConnectionStrings": {
-    "Default": "Server=.\\SQLEXPRESS;Database=aguilar1x\\SQLEXPRESS;Trusted_Connection=True;TrustServerCertificate=True"
+    "Default": "Server=.\\SQLEXPRESS;Database=PymeBD;Trusted_Connection=True;TrustServerCertificate=True"
   },
 
   "Database": {
