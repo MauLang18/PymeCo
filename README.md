@@ -2,7 +2,7 @@
 
 **Curso: Programación Avanzada (SC-601)**
 
-**Profesor: Raul Alexandre Monge**
+**Profesor: Raul Alexander Monge**
 
 **Equipo 1 – Grupo de trabajo**
 
