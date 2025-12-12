@@ -1,0 +1,72 @@
+@model POS.Application.DTOs.PedidoDto
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Factura Pedido #@Model.Id</title>
+    <style>
+        body { font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #111; }
+        .header { margin-bottom: 16px; }
+        .title { font-size: 18px; font-weight: bold; margin: 0; }
+        .muted { color: #666; margin: 2px 0 0 0; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+        th, td { border: 1px solid #ccc; padding: 6px; }
+        th { background: #f3f4f6; text-align: left; }
+        .right { text-align: right; }
+        .totals { margin-top: 12px; width: 100%; }
+        .totals td { border: none; padding: 2px 0; }
+        .totals .label { color: #444; }
+        .totals .value { font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <p class="title">Factura - Pedido #@Model.Id</p>
+        <p class="muted">Fecha: @Model.Fecha.ToString("dd/MM/yyyy HH:mm")</p>
+    </div>
+
+    <div>
+        <p><strong>Cliente:</strong> @(Model.ClienteNombre ?? $"Cliente {Model.ClienteId}")</p>
+        <p><strong>Atendido por:</strong> @(Model.UsuarioNombre ?? $"Usuario {Model.UsuarioId}")</p>
+        <p><strong>Estado:</strong> @Model.EstadoPedido</p>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Producto</th>
+                <th class="right">Cant.</th>
+                <th class="right">Precio Unit.</th>
+                <th class="right">Total Línea</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var d in Model.Detalles ?? new List<POS.Application.DTOs.PedidoDetalleDto>())
+            {
+                <tr>
+                    <td>@(d.ProductoNombre ?? $"Producto {d.ProductoId}")</td>
+                    <td class="right">@d.Cantidad</td>
+                    <td class="right">@d.PrecioUnitario.ToString("N2")</td>
+                    <td class="right">@d.TotalLinea.ToString("N2")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <table class="totals">
+        <tr>
+            <td class="label right">Subtotal:</td>
+            <td class="value right" style="width: 140px;">@Model.Subtotal.ToString("N2")</td>
+        </tr>
+        <tr>
+            <td class="label right">Impuestos:</td>
+            <td class="value right">@Model.Impuestos.ToString("N2")</td>
+        </tr>
+        <tr>
+            <td class="label right">Total:</td>
+            <td class="value right">@Model.Total.ToString("N2")</td>
+        </tr>
+    </table>
+</body>
+</html>
