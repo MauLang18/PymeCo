@@ -1,72 +1,202 @@
 @model POS.Application.DTOs.PedidoDto
+@{
+    Layout = null;
+}
+
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8" />
-    <title>Factura Pedido #@Model.Id</title>
-    <style>
-        body { font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #111; }
-        .header { margin-bottom: 16px; }
-        .title { font-size: 18px; font-weight: bold; margin: 0; }
-        .muted { color: #666; margin: 2px 0 0 0; }
+    <title>Factura Pedido @Model.Id</title>
 
-        table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-        th, td { border: 1px solid #ccc; padding: 6px; }
-        th { background: #f3f4f6; text-align: left; }
-        .right { text-align: right; }
-        .totals { margin-top: 12px; width: 100%; }
-        .totals td { border: none; padding: 2px 0; }
-        .totals .label { color: #444; }
-        .totals .value { font-weight: bold; }
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 12px;
+            color: #111;
+            margin: 30px;
+        }
+
+        .header {
+            display: table;
+            width: 100%;
+            margin-bottom: 25px;
+        }
+
+        .header-left {
+            display: table-cell;
+            vertical-align: top;
+        }
+
+        .header-right {
+            display: table-cell;
+            text-align: right;
+            vertical-align: top;
+        }
+
+        .company-name {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .invoice-title {
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        .invoice-number {
+            font-size: 12px;
+            color: #555;
+        }
+
+        .info {
+            display: table;
+            width: 100%;
+            margin-bottom: 25px;
+        }
+
+        .info-box {
+            display: table-cell;
+            width: 50%;
+            vertical-align: top;
+            padding: 10px;
+            border: 1px solid #ddd;
+        }
+
+        .info-box h4 {
+            margin: 0 0 6px 0;
+            font-size: 13px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 4px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th {
+            background-color: #f3f3f3;
+            border: 1px solid #ccc;
+            padding: 8px;
+            font-size: 11px;
+            text-align: left;
+        }
+
+        td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            font-size: 11px;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .totals {
+            width: 40%;
+            float: right;
+            margin-top: 20px;
+        }
+
+        .totals td {
+            padding: 6px;
+        }
+
+        .totals tr:last-child td {
+            font-weight: bold;
+            font-size: 13px;
+            border-top: 2px solid #000;
+        }
+
+        .footer {
+            clear: both;
+            margin-top: 50px;
+            font-size: 10px;
+            color: #666;
+            text-align: center;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+        }
     </style>
 </head>
+
 <body>
+
+    <!-- HEADER -->
     <div class="header">
-        <p class="title">Factura - Pedido #@Model.Id</p>
-        <p class="muted">Fecha: @Model.Fecha.ToString("dd/MM/yyyy HH:mm")</p>
+        <div class="header-left">
+            <div class="company-name">PymeCo S.A.</div>
+            <div>San José, Costa Rica</div>
+            <div>Tel: 2222-2222</div>
+        </div>
+
+        <div class="header-right">
+            <div class="invoice-title">FACTURA</div>
+            <div class="invoice-number">Pedido #@Model.Id</div>
+        </div>
     </div>
 
-    <div>
-        <p><strong>Cliente:</strong> @(Model.ClienteNombre ?? $"Cliente {Model.ClienteId}")</p>
-        <p><strong>Atendido por:</strong> @(Model.UsuarioNombre ?? $"Usuario {Model.UsuarioId}")</p>
-        <p><strong>Estado:</strong> @Model.EstadoPedido</p>
+    <!-- INFO -->
+    <div class="info">
+        <div class="info-box">
+            <h4>Cliente</h4>
+            <div><strong>Nombre:</strong> @Model.ClienteNombre</div>
+        </div>
+
+        <div class="info-box">
+            <h4>Detalle de Factura</h4>
+            <div><strong>Fecha:</strong> @Model.Fecha.ToString("dd/MM/yyyy HH:mm")</div>
+            <div><strong>Usuario:</strong> @Model.UsuarioNombre</div>
+            <div><strong>Estado:</strong> @Model.EstadoPedido</div>
+        </div>
     </div>
 
+    <!-- TABLE -->
     <table>
         <thead>
             <tr>
                 <th>Producto</th>
-                <th class="right">Cant.</th>
-                <th class="right">Precio Unit.</th>
-                <th class="right">Total Línea</th>
+                <th class="text-right">Cantidad</th>
+                <th class="text-right">Precio Unit.</th>
+                <th class="text-right">Total</th>
             </tr>
         </thead>
         <tbody>
-            @foreach (var d in Model.Detalles ?? new List<POS.Application.DTOs.PedidoDetalleDto>())
-            {
-                <tr>
-                    <td>@(d.ProductoNombre ?? $"Producto {d.ProductoId}")</td>
-                    <td class="right">@d.Cantidad</td>
-                    <td class="right">@d.PrecioUnitario.ToString("N2")</td>
-                    <td class="right">@d.TotalLinea.ToString("N2")</td>
-                </tr>
-            }
+        @foreach (var d in Model.Detalles)
+        {
+            <tr>
+                <td>@d.ProductoNombre</td>
+                <td class="text-right">@d.Cantidad</td>
+                <td class="text-right">@d.PrecioUnitario.ToString("N2")</td>
+                <td class="text-right">@d.TotalLinea.ToString("N2")</td>
+            </tr>
+        }
         </tbody>
     </table>
 
+    <!-- TOTALS -->
     <table class="totals">
         <tr>
-            <td class="label right">Subtotal:</td>
-            <td class="value right" style="width: 140px;">@Model.Subtotal.ToString("N2")</td>
+            <td>Subtotal</td>
+            <td class="text-right">@Model.Subtotal.ToString("N2")</td>
         </tr>
         <tr>
-            <td class="label right">Impuestos:</td>
-            <td class="value right">@Model.Impuestos.ToString("N2")</td>
+            <td>Impuestos</td>
+            <td class="text-right">@Model.Impuestos.ToString("N2")</td>
         </tr>
         <tr>
-            <td class="label right">Total:</td>
-            <td class="value right">@Model.Total.ToString("N2")</td>
+            <td>Total</td>
+            <td class="text-right">@Model.Total.ToString("N2")</td>
         </tr>
     </table>
+
+    <!-- FOOTER -->
+    <div class="footer">
+        Documento generado automáticamente. No requiere firma.
+    </div>
+
 </body>
 </html>
+

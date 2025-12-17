@@ -1,4 +1,4 @@
-namespace POS.Application.Interfaces.GenertateExcel;
+namespace POS.Infrastructure.GenerateExcel;
 
 public interface IGenerateExcelService
 {

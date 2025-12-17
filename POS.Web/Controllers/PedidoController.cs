@@ -218,7 +218,7 @@ namespace POS.Web.Controllers
             var html = await RenderViewToStringAsync("FacturaPedidoPdf", dto);
 
             // Generador genérico (no BD)
-            var pdfBytes = _generatePdfService.GeneratePdf(html, dto);
+            var pdfBytes = _generatePdfService.GeneratePdf(html);
 
             return File(pdfBytes, "application/pdf", $"Pedido_{id}.pdf");
         }
@@ -397,4 +397,3 @@ namespace POS.Web.Controllers
         }
     }
 }
-

@@ -39,16 +39,16 @@ public static class DependencyInjection
             });
         }
 
+        services.AddSingleton<IConverter, SynchronizedConverter>(
+            provider => new SynchronizedConverter(new PdfTools())
+        );
+
         services.AddScoped<IProductRepository, ProductRepository>();
         services.AddScoped<IClientRepository, ClientRepository>();
         services.AddScoped<IPedidoRepository, PedidoRepository>();
         services.AddSingleton<IFileStorageLocal, FileStorageLocal>();
         services.AddTransient<IGenerateExcelService, GenerateExcelService>();
         services.AddTransient<IGeneratePdfService, GeneratePdfService>();
-
-        services.AddSingleton<IConverter, SynchronizedConverter>(
-            provider => new SynchronizedConverter(new PdfTools())
-        );
 
         return services;
     }

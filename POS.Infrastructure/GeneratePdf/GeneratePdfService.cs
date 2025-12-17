@@ -1,5 +1,3 @@
-using System.Text;
-using System.Text.RegularExpressions;
 using DinkToPdf;
 using DinkToPdf.Contracts;
 
@@ -14,79 +12,11 @@ public class GeneratePdfService : IGeneratePdfService
         _pdfConverter = pdfConverter;
     }
 
-    public byte[] GeneratePdf<T>(string htmlTemplate, T data)
+    public byte[] GeneratePdf(string htmlContent)
     {
-        if (string.IsNullOrWhiteSpace(htmlTemplate))
-            throw new ArgumentException("HTML template cannot be null or empty.");
+        if (string.IsNullOrWhiteSpace(htmlContent))
+            throw new ArgumentException("HTML content cannot be null or empty.");
 
-        var populatedHtml = PopulateTemplate(htmlTemplate, data);
-
-        return GeneratePdfFromHtml(populatedHtml);
-    }
-
-    // =========================
-    // Template engine (simple)
-    // =========================
-    private string PopulateTemplate<T>(string templateContent, T data)
-    {
-        var populatedHtml = templateContent;
-
-        // Replace simple properties {{PropertyName}}
-        foreach (var property in typeof(T).GetProperties())
-        {
-            var key = $"{{{{{property.Name}}}}}";
-            var value = property.GetValue(data)?.ToString() ?? string.Empty;
-            populatedHtml = populatedHtml.Replace(key, value);
-        }
-
-        // Handle collections {{#each Collection}} ... {{/each}}
-        var matches = Regex.Matches(
-            populatedHtml,
-            @"{{#each\s+(?<Collection>\w+)}}(?<Content>.*?){{\/each}}",
-            RegexOptions.Singleline
-        );
-
-        foreach (Match match in matches)
-        {
-            var collectionName = match.Groups["Collection"].Value;
-            var itemTemplate = match.Groups["Content"].Value;
-
-            var collectionProperty = typeof(T).GetProperty(collectionName);
-            var collection = collectionProperty?.GetValue(data) as System.Collections.IEnumerable;
-
-            if (collection == null)
-            {
-                populatedHtml = populatedHtml.Replace(match.Value, string.Empty);
-                continue;
-            }
-
-            var collectionHtml = new StringBuilder();
-
-            foreach (var item in collection)
-            {
-                var itemContent = itemTemplate;
-
-                foreach (var itemProperty in item.GetType().GetProperties())
-                {
-                    var itemKey = $"{{{{this.{itemProperty.Name}}}}}";
-                    var itemValue = itemProperty.GetValue(item)?.ToString() ?? string.Empty;
-                    itemContent = itemContent.Replace(itemKey, itemValue);
-                }
-
-                collectionHtml.Append(itemContent);
-            }
-
-            populatedHtml = populatedHtml.Replace(match.Value, collectionHtml.ToString());
-        }
-
-        return populatedHtml;
-    }
-
-    // =========================
-    // PDF generation
-    // =========================
-    private byte[] GeneratePdfFromHtml(string htmlContent)
-    {
         var document = new HtmlToPdfDocument
         {
             GlobalSettings = new GlobalSettings
