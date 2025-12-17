@@ -40,7 +40,7 @@ builder.Services.AddCors(options =>
 
 // Register layers
 builder.Services.AddApplication();
-builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddInfrastructure(builder.Configuration); // ✅ Solo una vez
 
 // ========== CONFIGURACIÓN DE IDENTITY ==========
 builder
