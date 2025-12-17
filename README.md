@@ -1,76 +1,74 @@
-**Proyecto Final – PymeCo.**
+# Proyecto Final – PymeCo
 
-**Curso: Programación Avanzada (SC-601)**
+## Curso
+**Programación Avanzada (SC-601)**
 
-**Profesor: Raul Alexander Monge**
+## Profesor
+**Raúl Alexander Monge**
 
-**Equipo 1 – Grupo de trabajo**
+## Equipo 1 – Grupo de trabajo
 
-*Integrantes:*
+### Integrantes
+- María Fernanda Mata Halleslebens  
+- Maurice Lang Bonilla  
+- Matías Aguilar Vega  
+- Isaac Navarro Bermúdez  
 
-  ⦁	María Fernanda Mata Halleslebens
-  
-  ⦁	Maurice Lang Bonilla
-  
-  ⦁	Matías Aguilar Vega
-  
-  ⦁	Isaac Navarro Bermúdez
+Maurice Lang Bonilla cumplió un rol de guía y apoyo técnico general para el equipo.  
+El desarrollo del front-end y las vistas fue trabajado de forma colaborativa por todos los integrantes.
 
-Maurice Lang Bonilla cumplió un rol de guía y apoyo técnico general para el equipo.
-El desarrollo del front-end y vistas fue trabajado entre todos los integrantes.
+---
+
+## Descripción del proyecto
+
+PymeCo es un sistema web desarrollado bajo el patrón **ASP.NET Core MVC**, orientado a la gestión de productos, clientes, inventario y pedidos en un contexto tipo B2B.
+
+El sistema implementa autenticación y autorización mediante **ASP.NET Core Identity**, cálculo automático de totales, administración de stock, exportación de información a Excel y un módulo de pedidos con control de estados.
+
+La aplicación fue desarrollada siguiendo la arquitectura sugerida por el curso, separando responsabilidades en capas para facilitar el mantenimiento y la evolución del sistema.
+
+### Tecnologías utilizadas
+- ASP.NET Core MVC (.NET 9)
+- Entity Framework Core (Code First)
+- SQL Server
+- Bootstrap 5
+- jQuery y AJAX
+
+---
+
+## Enlace al sistema en producción
+
+🔗 **https://pymeco.customcoder.com**
+
+> El sistema se encuentra desplegado en hosting y accesible públicamente para su evaluación.
+
+---
+
+## Requisitos previos
+
+Antes de ejecutar el proyecto en ambiente local, se requiere contar con:
+
+- Windows 10 u 11
+- Visual Studio 2022
+- .NET 9 SDK
+- SQL Server Express o SQL Server local
+- (Opcional) SQL Server Management Studio para inspección de la base de datos
+
+---
+
+## Instalación del proyecto (Instalación Express)
+
+El proyecto cumple con el requisito de instalación express solicitado en el curso:  
+**clonar el repositorio → ejecutar migraciones → correr la aplicación**.
+
+### 1. Clonar el repositorio
 
 
-*Descripción del proyecto*
-
-PymeCo es un sistema web MVC para la gestión de productos, clientes, inventario y pedidos tipo B2B.
-Implementa autenticación y autorización mediante ASP.NET Core Identity, incluye cálculo automático de totales, búsqueda inteligente de productos (autosuggest), administración de stock y módulo de pedidos con detalle.
-
-La aplicación sigue la arquitectura sugerida por el curso:
-
-  ⦁	ASP.NET Core MVC (C#)
-  
-  ⦁	Entity Framework Core con Code First
-  
-  ⦁	SQL Server
-  
-  ⦁	Bootstrap 5
-  
-  ⦁	jQuery y AJAX para búsqueda y cálculo en vivo
-
-*Enlace al sistema en producción*
-
-[http://fidelitaspos.runasp.net/](http://fidelitaspos.runasp.net) 
+    git clone https://github.com/MauLang18/PymeCo.git
 
 
-*Requisitos previos*
-
-Antes de ejecutar el proyecto, el entorno debe contar con:
-
-⦁	Windows 10/11
-
-⦁	Visual Studio 2022
-
-⦁	.NET 9 SDK
-
-⦁	SQL Server Express o SQL Server local
-
-⦁	(Opcional) SQL Server Management Studio para inspeccionar la base de datos
-
-
-*Instalación del proyecto*
-
-Este proyecto está configurado para cumplir con la instalación express requerida por el curso: clonar el repositorio, ejecutar las migraciones y correr la aplicación.
-
-Pasos:
-
-**1.	Clonar el repositorio**
-
-git clone https://github.com/MauLang18/PymeCo.git
-
-Abrir la solución **PymeCo.sln** en Visual Studio.
-
-**2.	Configurar la cadena de conexión en POS.Web/appsettings.Development.json o appsettings.json.**
-Utilizar el siguiente formato y sustituir únicamente el nombre del servidor SQL de cada persona:
+### 2.	Configurar la cadena de conexión en POS.Web/appsettings.Development.json o appsettings.json.
+Utilice el siguiente formato y sustituir únicamente el nombre del servidor SQL de cada persona:
 
         "ConnectionStrings": {
         "Default": "Server=MI_SERVIDOR\SQLEXPRESS;Database=PymeBD;Trusted_Connection=True;TrustServerCertificate=True"
@@ -81,43 +79,61 @@ Utilizar el siguiente formato y sustituir únicamente el nombre del servidor SQL
 
 El nombre de la base de datos debe permanecer como PymeBD, ya que se crea automáticamente mediante migraciones.
 
-**3.	Crear la base de datos**
+### 3.	Crear la base de datos
 
 En Visual Studio, abrir:
 
-Tools → NuGet Package Manager → Package Manager Console
+1. Tools → NuGet Package Manager → Package Manager Console
 
-Seleccionar **POS.Infrastructure** como proyecto predeterminado.
+2. Seleccionar **POS.Infrastructure** como proyecto predeterminado.
 
-Ejecutar el comando que la base de datos PymeBD y todas las tablas requeridas:
+3. Ejecutar el comando que la base de datos PymeBD y todas las tablas requeridas:
 
 
-    Update-Database -Context AppDbContext
+*Update-Database -Context AppDbContext*
+
 
 **4.	Ejecutar el proyecto**
    
 Seleccionar **POS.Web** como proyecto de inicio, y ejecutar con F5.
 
-*Usuarios de prueba*
+---
 
-Los roles implementados son Admin, Ventas y Operaciones.
+## Roles del sistema
 
-Se utilizan usuarios de prueba opcionales siguiendo el estándar del curso:
+El sistema implementa control de acceso basado en roles:
+
+### Administrador
+
+- Acceso completo al sistema
+
+- Gestión de usuarios, productos, clientes y pedidos
+
+- Exportación de información
+
+### Vendedor
+
+- Gestión de productos y clientes
+
+- Registro y consulta de pedidos
+
+- Exportación de listados
+
+### Cajero
+
+- Registro y consulta de pedidos
+
+- Consulta de productos y clientes
+
+- Seguimiento de estados de pedidos
 
 
-admin@demo.local -> / Passw0rd!
-
-ventas@demo.local -> / Passw0rd!
-
-ops@demo.local -> / Passw0rd!
+---
 
 
-Si el proyecto incluye seeding, estos usuarios estarán disponibles al ejecutar la aplicación.
-Si no, pueden crearse manualmente desde la interfaz de registro y luego asignarse roles usando la base de datos.
+## Funcionalidades principales
 
-*Funcionalidades principales*
-
-**Productos:**
+### Productos:
 
 ⦁	CRUD completo
 
@@ -127,32 +143,39 @@ Si no, pueden crearse manualmente desde la interfaz de registro y luego asignars
 
 ⦁	Validaciones de campos
 
+⦁	Exportación a Excel
 
-**Clientes:**
 
-⦁	CRUD
+### Clientes:
+
+⦁	CRUD completo
 
 ⦁	Validaciones y búsqueda por nombre o cédula
 
+⦁	Exportación a Excel
 
-**Pedidos:**
+
+### Pedidos:
 
 ⦁	Selección de cliente
 
-⦁	Autosuggest AJAX para productos
+⦁	Agregado de productos
 
 ⦁	Cálculo en vivo de subtotal, impuestos y total
 
-⦁	Disminución automática de stock al confirmar
+⦁	Control de estados (Pendiente, Pagado, Enviado
 
-⦁	Registro de totales para auditoría
+⦁	Actualización automática de stock
 
-⦁	Consulta de detalle del pedido
+⦁	Exportación a Excel
 
 
-**Seguridad:**
+---
 
-⦁	Identity con roles Admin, Ventas y Operaciones
+
+## Seguridad:
+
+⦁	Identity con roles Admin, Ventas y Cajero
 
 ⦁	Controladores y acciones protegidas con [Authorize]
 
@@ -187,7 +210,10 @@ POS.Domain: Entidades del dominio (Producto, Cliente, Pedido, etc.).
 POS.Application: Servicios, lógica de negocio y casos de uso.
 
 
-*Datos de prueba*
+---
+
+
+## Datos de prueba
 
 El proyecto debe incluir datos mínimos para evaluación:
 
