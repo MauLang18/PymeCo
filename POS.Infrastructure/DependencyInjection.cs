@@ -1,7 +1,11 @@
+using DinkToPdf;
+using DinkToPdf.Contracts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using POS.Infrastructure.FileStorage;
+using POS.Infrastructure.GenerateExcel;
+using POS.Infrastructure.GeneratePdf;
 using POS.Infrastructure.Persistence;
 using POS.Infrastructure.Repositories;
 
@@ -35,10 +39,16 @@ public static class DependencyInjection
             });
         }
 
+        services.AddSingleton<IConverter, SynchronizedConverter>(
+            provider => new SynchronizedConverter(new PdfTools())
+        );
+
         services.AddScoped<IProductRepository, ProductRepository>();
         services.AddScoped<IClientRepository, ClientRepository>();
         services.AddScoped<IPedidoRepository, PedidoRepository>();
         services.AddSingleton<IFileStorageLocal, FileStorageLocal>();
+        services.AddTransient<IGenerateExcelService, GenerateExcelService>();
+        services.AddTransient<IGeneratePdfService, GeneratePdfService>();
 
         return services;
     }

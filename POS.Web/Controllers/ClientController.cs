@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using POS.Application.DTOs;
 using POS.Application.Interfaces;
+using POS.Infrastructure.GenerateExcel;
 
 namespace POS.Web.Controllers;
 
@@ -11,41 +12,76 @@ namespace POS.Web.Controllers;
 /// - Vendedor: Puede ver, crear y editar (no eliminar)
 /// - Cajero: Solo puede ver
 /// </summary>
-[Authorize] // Requiere autenticación
+[Authorize]
 public class ClientController : Controller
 {
     private readonly IClientService _service;
     private readonly ILogger<ClientController> _logger;
+    private readonly IGenerateExcelService _generateExcelService;
 
-    public ClientController(IClientService service, ILogger<ClientController> logger)
+    public ClientController(
+        IClientService service,
+        ILogger<ClientController> logger,
+        IGenerateExcelService generateExcelService
+    )
     {
         _service = service;
         _logger = logger;
+        _generateExcelService = generateExcelService;
     }
 
-    /// <summary>
-    /// Listar clientes - Todos pueden ver
-    /// </summary>
+    // ==========================
+    // LISTADO
+    // ==========================
     [HttpGet]
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-    [Authorize(Roles = "Admin,Vendedor")]
+    [Authorize(Roles = "Admin,Vendedor,Cajero")]
     public async Task<IActionResult> ListClient(string? q, CancellationToken ct)
     {
         _logger.LogInformation("GET ListClient started. Query={Query}", q);
         var items = await _service.ListAsync(q, ct);
-        var count = items?.Count() ?? 0;
-        _logger.LogInformation("GET ListClient completed. Returned {Count} items", count);
+        _logger.LogInformation(
+            "GET ListClient completed. Returned {Count} items",
+            items?.Count() ?? 0
+        );
         return View("ListClient", items);
     }
 
-    /// <summary>
-    /// Crear cliente - Admin y Vendedor
-    /// </summary>
+    // ==========================
+    // EXPORT EXCEL (LISTADO)
+    // ==========================
     [HttpGet]
-    [Authorize(Roles = "Admin,Vendedor")] // Cajero NO puede crear
+    [Authorize(Roles = "Admin,Vendedor,Cajero")]
+    public async Task<IActionResult> ExportExcel(string? q, CancellationToken ct)
+    {
+        var items = await _service.ListAsync(q, ct);
+
+        var columns = new List<(string ColumnName, string PropertyName)>
+        {
+            ("ID", "Id"),
+            ("Nombre", "Name"),
+            ("Cédula", "NationalId"),
+            ("Correo", "Email"),
+            ("Teléfono", "Phone"),
+            ("Dirección", "Address"),
+        };
+
+        var bytes = _generateExcelService.GenerateExcel(items, columns);
+
+        return File(
+            bytes,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            $"Clientes_{DateTime.Now:yyyyMMdd_HHmm}.xlsx"
+        );
+    }
+
+    // ==========================
+    // CREATE
+    // ==========================
+    [HttpGet]
+    [Authorize(Roles = "Admin,Vendedor")]
     public IActionResult CreateClient()
     {
-        _logger.LogInformation("GET CreateClient view requested");
         return View("CreateClient", new ClientDto());
     }
 
@@ -55,36 +91,22 @@ public class ClientController : Controller
     public async Task<IActionResult> CreateClient(ClientDto dto, CancellationToken ct)
     {
         if (!ModelState.IsValid)
-        {
-            _logger.LogWarning(
-                "POST CreateClient invalid model. Errors={ErrorCount}",
-                ModelState.ErrorCount
-            );
             return View("CreateClient", dto);
-        }
 
-        _logger.LogInformation("POST CreateClient started");
         var id = await _service.CreateAsync(dto, ct);
-        _logger.LogInformation("POST CreateClient succeeded. Created Id={Id}", id);
         return RedirectToAction(nameof(DetailsClient), new { id });
     }
 
-    /// <summary>
-    /// Editar cliente - Admin y Vendedor
-    /// </summary>
+    // ==========================
+    // EDIT
+    // ==========================
     [HttpGet]
     [Authorize(Roles = "Admin,Vendedor")]
     public async Task<IActionResult> EditClient(int id, CancellationToken ct)
     {
-        _logger.LogInformation("GET EditClient started. Id={Id}", id);
         var item = await _service.GetByIdAsync(id, ct);
         if (item is null)
-        {
-            _logger.LogWarning("GET EditClient NotFound. Id={Id}", id);
             return NotFound();
-        }
-
-        _logger.LogInformation("GET EditClient loaded. Id={Id}", id);
         return View("EditClient", item);
     }
 
@@ -94,37 +116,22 @@ public class ClientController : Controller
     public async Task<IActionResult> EditClient(int id, ClientDto dto, CancellationToken ct)
     {
         if (!ModelState.IsValid)
-        {
-            _logger.LogWarning(
-                "POST EditClient invalid model. Id={Id} Errors={ErrorCount}",
-                id,
-                ModelState.ErrorCount
-            );
             return View("EditClient", dto);
-        }
 
-        _logger.LogInformation("POST EditClient started. Id={Id}", id);
         await _service.UpdateAsync(id, dto, ct);
-        _logger.LogInformation("POST EditClient succeeded. Id={Id}", id);
         return RedirectToAction(nameof(DetailsClient), new { id });
     }
 
-    /// <summary>
-    /// Eliminar cliente - Solo Admin
-    /// </summary>
+    // ==========================
+    // DELETE
+    // ==========================
     [HttpGet]
-    [Authorize(Roles = "Admin")] // Solo Admin puede eliminar
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteClient(int id, CancellationToken ct)
     {
-        _logger.LogInformation("GET DeleteClient confirmation started. Id={Id}", id);
         var item = await _service.GetByIdAsync(id, ct);
         if (item is null)
-        {
-            _logger.LogWarning("GET DeleteClient NotFound. Id={Id}", id);
             return NotFound();
-        }
-
-        _logger.LogInformation("GET DeleteClient confirmation loaded. Id={Id}", id);
         return View("DeleteClient", item);
     }
 
@@ -133,28 +140,21 @@ public class ClientController : Controller
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteClientConfirmed(int id, CancellationToken ct)
     {
-        _logger.LogInformation("POST DeleteClientConfirmed started. Id={Id}", id);
         await _service.DeleteAsync(id, ct);
-        _logger.LogInformation("POST DeleteClientConfirmed succeeded. Id={Id}", id);
         return RedirectToAction(nameof(ListClient));
     }
 
-    /// <summary>
-    /// Ver detalles - Todos pueden ver
-    /// </summary>
+    // ==========================
+    // DETAILS
+    // ==========================
     [HttpGet]
     [Authorize(Roles = "Admin,Vendedor,Cajero")]
     public async Task<IActionResult> DetailsClient(int id, CancellationToken ct)
     {
-        _logger.LogInformation("GET DetailsClient started. Id={Id}", id);
         var item = await _service.GetByIdAsync(id, ct);
         if (item is null)
-        {
-            _logger.LogWarning("GET DetailsClient NotFound. Id={Id}", id);
             return NotFound();
-        }
-
-        _logger.LogInformation("GET DetailsClient loaded. Id={Id}", id);
         return View("DetailsClient", item);
     }
 }
+

@@ -2,96 +2,121 @@
 using Microsoft.AspNetCore.Mvc;
 using POS.Application.DTOs;
 using POS.Application.Interfaces;
+using POS.Domain.Entities;
 using POS.Domain.Enums;
 using POS.Infrastructure.FileStorage;
+using POS.Infrastructure.GenerateExcel;
 
 namespace POS.Web.Controllers;
 
 /// <summary>
 /// Controlador de productos con autorización por roles
-/// - Admin: Puede hacer todo (crear, editar, eliminar, ver)
-/// - Vendedor: Solo puede ver listado y detalles
-/// - Cajero: Solo puede ver listado y detalles
+/// - Admin: Puede hacer todo
+/// - Vendedor: Ver listado y detalles
+/// - Cajero: Ver listado y detalles
 /// </summary>
-[Authorize] // ⚠️ Requiere que el usuario esté autenticado para acceder
+[Authorize]
 public class ProductController : Controller
 {
     private readonly IProductService _service;
     private readonly ILogger<ProductController> _logger;
     private readonly IFileStorageLocal _files;
+    private readonly IGenerateExcelService _generateExcelService;
 
-    public ProductController(IProductService service, ILogger<ProductController> logger, IFileStorageLocal files) {
+    public ProductController(
+        IProductService service,
+        ILogger<ProductController> logger,
+        IFileStorageLocal files,
+        IGenerateExcelService generateExcelService
+    )
+    {
         _service = service;
         _logger = logger;
         _files = files;
+        _generateExcelService = generateExcelService;
     }
 
-    /// <summary>
-    /// Listar productos - Todos los usuarios autenticados pueden verlo
-    /// </summary>
+    // ==========================
+    // LISTADO
+    // ==========================
     [HttpGet]
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-    [Authorize(Roles = "Admin,Vendedor,Cajero")] // Todos los roles
+    [Authorize(Roles = "Admin,Vendedor,Cajero")]
     public async Task<IActionResult> ListProduct(string? q, CancellationToken ct)
     {
         _logger.LogInformation("GET ListProduct started. Query={Query}", q);
         var items = await _service.ListAsync(q, ct);
-        var count = items?.Count() ?? 0;
-        _logger.LogInformation("GET ListProduct completed. Returned {Count} items", count);
+        _logger.LogInformation(
+            "GET ListProduct completed. Returned {Count} items",
+            items?.Count() ?? 0
+        );
         return View("ListProduct", items);
     }
 
-    /// <summary>
-    /// Crear producto - Solo Admin
-    /// </summary>
+    // ==========================
+    // EXPORT EXCEL (LISTADO)
+    // ==========================
     [HttpGet]
-    [Authorize(Roles = "Admin")] // ⚠️ Solo Admin puede crear
+    [Authorize(Roles = "Admin,Vendedor,Cajero")]
+    public async Task<IActionResult> ExportExcel(string? q, CancellationToken ct)
+    {
+        var items = await _service.ListAsync(q, ct);
+
+        var columns = new List<(string ColumnName, string PropertyName)>
+        {
+            ("ID", "Id"),
+            ("Nombre", "Name"),
+            ("CategoriaId", "CategoryId"),
+            ("Precio", "Price"),
+            ("IVA (%)", "TaxPercent"),
+            ("Stock", "Stock"),
+            ("Estado", "Status"),
+        };
+
+        var bytes = _generateExcelService.GenerateExcel(items, columns);
+
+        return File(
+            bytes,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            $"Productos_{DateTime.Now:yyyyMMdd_HHmm}.xlsx"
+        );
+    }
+
+    // ==========================
+    // CREATE
+    // ==========================
+    [HttpGet]
+    [Authorize(Roles = "Admin")]
     public IActionResult CreateProduct()
     {
-        _logger.LogInformation("GET CreateProduct view requested");
         return View("CreateProduct", new ProductDto());
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = "Admin")] // ⚠️ Solo Admin puede crear
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> CreateProduct(ProductDto dto, CancellationToken ct)
     {
         if (!ModelState.IsValid)
-        {
-            _logger.LogWarning(
-                "POST CreateProduct invalid model. Errors={ErrorCount}",
-                ModelState.ErrorCount
-            );
             return View("CreateProduct", dto);
-        }
-
-        _logger.LogInformation("POST CreateProduct started");
 
         if (dto.ImageFile is { Length: > 0 })
-        {
             dto.ImageUrl = await _files.SaveAsync(dto.ImageFile, "products");
-        }
 
         var id = await _service.CreateAsync(dto, ct);
-        _logger.LogInformation("POST CreateProduct succeeded. Created Id={Id}", id);
         return RedirectToAction(nameof(DetailsProduct), new { id });
     }
 
-    /// <summary>
-    /// Editar producto - Solo Admin
-    /// </summary>
+    // ==========================
+    // EDIT
+    // ==========================
     [HttpGet]
-    [Authorize(Roles = "Admin")] // ⚠️ Solo Admin puede editar
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> EditProduct(int id, CancellationToken ct)
     {
-        _logger.LogInformation("GET EditProduct started. Id={Id}", id);
         var entity = await _service.GetByIdAsync(id, ct);
         if (entity is null)
-        {
-            _logger.LogWarning("GET EditProduct NotFound. Id={Id}", id);
             return NotFound();
-        }
 
         var dto = new ProductDto
         {
@@ -105,96 +130,66 @@ public class ProductController : Controller
         };
 
         ViewBag.ProductId = id;
-        _logger.LogInformation("GET EditProduct loaded. Id={Id}", id);
         return View("EditProduct", dto);
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = "Admin")] // ⚠️ Solo Admin puede editar
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> EditProduct(int id, ProductDto dto, CancellationToken ct)
     {
         if (!ModelState.IsValid)
         {
-            _logger.LogWarning(
-                "POST EditProduct invalid model. Id={Id} Errors={ErrorCount}",
-                id,
-                ModelState.ErrorCount
-            );
             ViewBag.ProductId = id;
             return View("EditProduct", dto);
         }
 
-        _logger.LogInformation("POST EditProduct started. Id={Id}", id);
-
         var current = await _service.GetByIdAsync(id, ct);
         if (current is null)
-        {
-            _logger.LogWarning("POST EditProduct NotFound on fetch. Id={Id}", id);
             return NotFound();
-        }
 
         if (dto.ImageFile is { Length: > 0 })
-        {
-            // Opcional: borrar la imagen anterior con _files.DeleteAsync(current.ImageUrl);
             dto.ImageUrl = await _files.SaveAsync(dto.ImageFile, "products");
-        }
         else
-        {
             dto.ImageUrl ??= current.ImageUrl;
-        }
 
         await _service.UpdateAsync(id, dto, ct);
-        _logger.LogInformation("POST EditProduct succeeded. Id={Id}", id);
         return RedirectToAction(nameof(DetailsProduct), new { id });
     }
 
-    /// <summary>
-    /// Eliminar producto - Solo Admin
-    /// </summary>
+    // ==========================
+    // DELETE
+    // ==========================
     [HttpGet]
-    [Authorize(Roles = "Admin")] // ⚠️ Solo Admin puede eliminar
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteProduct(int id, CancellationToken ct)
     {
-        _logger.LogInformation("GET DeleteProduct confirmation started. Id={Id}", id);
         var entity = await _service.GetByIdAsync(id, ct);
         if (entity is null)
-        {
-            _logger.LogWarning("GET DeleteProduct NotFound. Id={Id}", id);
             return NotFound();
-        }
-
-        _logger.LogInformation("GET DeleteProduct confirmation loaded. Id={Id}", id);
         return View("DeleteProduct", entity);
     }
 
     [HttpPost, ActionName("DeleteProduct")]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = "Admin")] // ⚠️ Solo Admin puede eliminar
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteProductConfirmed(int id, CancellationToken ct)
     {
-        _logger.LogInformation("POST DeleteProductConfirmed started. Id={Id}", id);
         await _service.DeleteAsync(id, ct);
-        _logger.LogInformation("POST DeleteProductConfirmed succeeded. Id={Id}", id);
         return RedirectToAction(nameof(ListProduct));
     }
 
-    /// <summary>
-    /// Ver detalles - Todos los usuarios autenticados
-    /// </summary>
+    // ==========================
+    // DETAILS
+    // ==========================
     [HttpGet]
-    [Authorize(Roles = "Admin,Vendedor,Cajero")] // Todos pueden ver detalles
+    [Authorize(Roles = "Admin,Vendedor,Cajero")]
     public async Task<IActionResult> DetailsProduct(int id, CancellationToken ct)
     {
-        _logger.LogInformation("GET DetailsProduct started. Id={Id}", id);
         var entity = await _service.GetByIdAsync(id, ct);
         if (entity is null)
-        {
-            _logger.LogWarning("GET DetailsProduct NotFound. Id={Id}", id);
             return NotFound();
-        }
-
-        _logger.LogInformation("GET DetailsProduct loaded. Id={Id}", id);
         return View("DetailsProduct", entity);
     }
 }
+

@@ -9,21 +9,37 @@
         <h1 class="text-2xl font-bold text-[color:var(--txt-primary)]">@ViewBag.Title</h1>
 
         <div class="flex items-center gap-3 mt-4 sm:mt-0">
-            <a asp-controller="Client" asp-action="CreateClient"
-               class="px-4 py-2 rounded-xl text-white font-medium bg-[color:var(--primary)] hover:bg-[color:var(--primary-dark)] transition-colors">
-                <i data-lucide="plus" class="inline w-4 h-4 mr-1"></i> Nuevo Cliente
+            @if (User.IsInRole("Admin") || User.IsInRole("Vendedor"))
+            {
+                <a asp-controller="Client" asp-action="CreateClient"
+                   class="px-4 py-2 rounded-xl text-white font-medium
+                          bg-[color:var(--primary)] hover:bg-[color:var(--primary-dark)] transition-colors">
+                    <i data-lucide="plus" class="inline w-4 h-4 mr-1"></i>
+                    Nuevo Cliente
+                </a>
+            }
+
+            <a href="@Url.Action("ExportExcel", "Client", new { q = Context.Request.Query["q"].ToString() })"
+               class="px-4 py-2 rounded-xl border border-emerald-600 text-emerald-700
+                      hover:bg-emerald-600 hover:text-white transition-colors font-medium">
+                <i data-lucide="file-spreadsheet" class="inline w-4 h-4 mr-1"></i>
+                Exportar Excel
             </a>
 
-            <!-- Refresh button (replaces the old "Alerta" link) -->
             <button id="refreshClients"
                     type="button"
-                    class="px-4 py-2 rounded-xl border border-[color:var(--primary)] text-[color:var(--primary)] hover:bg-[color:var(--primary)] hover:text-white transition-colors font-medium">
-                <i data-lucide="rotate-cw" class="inline w-4 h-4 mr-1"></i> Refrescar
+                    class="px-4 py-2 rounded-xl border border-[color:var(--primary)]
+                           text-[color:var(--primary)]
+                           hover:bg-[color:var(--primary)] hover:text-white
+                           transition-colors font-medium">
+                <i data-lucide="rotate-cw" class="inline w-4 h-4 mr-1"></i>
+                Refrescar
             </button>
         </div>
     </div>
 
-    <div class="w-full overflow-x-auto shadow-sm rounded-2xl border border-[color:var(--border)] bg-[color:var(--light-panel)]">
+    <div class="w-full overflow-x-auto shadow-sm rounded-2xl border border-[color:var(--border)]
+                bg-[color:var(--light-panel)]">
         <table class="min-w-full text-sm text-left text-[color:var(--txt-secondary)]">
             <thead class="bg-[color:var(--light-bg)] text-[color:var(--txt-primary)] text-xs uppercase">
                 <tr>
@@ -41,22 +57,24 @@
                 {
                     foreach (var c in Model)
                     {
-                        <tr class="border-t border-[color:var(--border)] hover:bg-[color:var(--light-bg)] transition-colors">
+                        <tr class="border-t border-[color:var(--border)] hover:bg-[color:var(--light-bg)]">
                             <td class="px-6 py-4 text-center">
                                 <div class="flex items-center justify-center gap-4">
-                                    <a asp-controller="Client" asp-action="EditClient" asp-route-id="@c.Id"
-                                       class="text-[color:var(--primary)] hover:text-[color:var(--primary-dark)] transition-colors"
-                                       title="Editar">
-                                        <i data-lucide="pencil-line" class="w-5 h-5"></i>
-                                    </a>
-                                    <a asp-controller="Client" asp-action="DeleteClient" asp-route-id="@c.Id"
-                                       class="text-[color:var(--error)] hover:text-red-700 transition-colors"
-                                       title="Eliminar">
-                                        <i data-lucide="trash-2" class="w-5 h-5"></i>
-                                    </a>
-                                    <a asp-controller="Client" asp-action="DetailsClient" asp-route-id="@c.Id"
-                                       class="text-[color:var(--secondary)] hover:text-emerald-600 transition-colors"
-                                       title="Ver Detalles">
+                                    @if (User.IsInRole("Admin") || User.IsInRole("Vendedor"))
+                                    {
+                                        <a asp-action="EditClient" asp-route-id="@c.Id">
+                                            <i data-lucide="pencil-line" class="w-5 h-5"></i>
+                                        </a>
+                                    }
+
+                                    @if (User.IsInRole("Admin"))
+                                    {
+                                        <a asp-action="DeleteClient" asp-route-id="@c.Id">
+                                            <i data-lucide="trash-2" class="w-5 h-5"></i>
+                                        </a>
+                                    }
+
+                                    <a asp-action="DetailsClient" asp-route-id="@c.Id">
                                         <i data-lucide="eye" class="w-5 h-5"></i>
                                     </a>
                                 </div>
@@ -85,7 +103,6 @@
 
 @section Scripts {
     <script>
-        // Refresh preserving current query (?q=...) and busting cache with _ts
         (function () {
             const btn = document.getElementById('refreshClients');
             if (!btn) return;
@@ -98,13 +115,13 @@
 
                 btn.disabled = true;
                 btn.classList.add('opacity-70', 'cursor-wait');
-                btn.innerHTML = '<i data-lucide="loader" class="inline w-4 h-4 mr-1 animate-spin"></i> Actualizando...';
+                btn.innerHTML =
+                    '<i data-lucide="loader" class="inline w-4 h-4 mr-1 animate-spin"></i> Actualizando...';
 
                 window.location.assign(url);
             });
 
-            // Initialize Lucide icons if available globally
-            if (window.lucide && typeof window.lucide.createIcons === 'function') {
+            if (window.lucide?.createIcons) {
                 window.lucide.createIcons();
             }
         })();
