@@ -12,8 +12,8 @@ public class PedidoDto
     public int ClienteId { get; set; }
     public string? ClienteNombre { get; set; }
 
-    [Required, Range(1, int.MaxValue, ErrorMessage = "Debe indicar un usuario válido.")]
-    public int UsuarioId { get; set; }
+    [Required]
+    public string UsuarioId { get; set; } = string.Empty;
     public string? UsuarioNombre { get; set; }
 
     public DateTime Fecha { get; set; } = DateTime.Now;
@@ -28,7 +28,7 @@ public class PedidoDto
     public decimal Total { get; set; }
 
     [Required, MaxLength(50)]
-    public string EstadoPedido { get; set; } = "Pendiente"; // Pendiente, Pagado, Enviado, Cancelado
+    public string EstadoPedido { get; set; } = "Pendiente";
 
     [MinLength(1, ErrorMessage = "Debe agregar al menos un detalle al pedido.")]
     public List<PedidoDetalleDto> Detalles { get; set; } = new();

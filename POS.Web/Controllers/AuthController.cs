@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using POS.Application.Interfaces;
 using POS.Domain.Entities;
 using POS.Web.ViewModels;
 
@@ -14,19 +13,16 @@ namespace POS.Web.Controllers
     {
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly IUserService _userService;
         private readonly ILogger<AuthController> _logger;
 
         public AuthController(
             SignInManager<ApplicationUser> signInManager,
             UserManager<ApplicationUser> userManager,
-            IUserService userService,
             ILogger<AuthController> logger
         )
         {
             _signInManager = signInManager;
             _userManager = userManager;
-            _userService = userService;
             _logger = logger;
         }
 
@@ -95,51 +91,28 @@ namespace POS.Web.Controllers
                 Email = model.Email,
                 FullName = model.FullName,
                 EmailConfirmed = true,
+                IsActive = false // ← INACTIVO hasta que Admin apruebe
             };
 
-            var createIdentity = await _userManager.CreateAsync(identityUser, model.Password);
-            if (!createIdentity.Succeeded)
-            {
-                foreach (var error in createIdentity.Errors)
-                    ModelState.AddModelError(string.Empty, error.Description);
-                return View(model);
-            }
+            var createResult = await _userManager.CreateAsync(identityUser, model.Password);
 
-            try
+            if (!createResult.Succeeded)
             {
-                var usuario = new Usuario
+                foreach (var error in createResult.Errors)
                 {
-                    Nombre = model.FullName,
-                    EstadoUsuario = "Activo",
-                    RolId = null,
-                };
-
-                await _userService.CreateAsync(usuario);
-
-                await _userManager.AddToRoleAsync(identityUser, "Cajero");
-
-                await _signInManager.SignInAsync(identityUser, isPersistent: false);
-
-                _logger.LogInformation(
-                    "User {Email} registered and mirrored into Usuario",
-                    model.Email
-                );
-                return RedirectToAction("Index", "Home");
-            }
-            catch (System.Exception ex)
-            {
-                _logger.LogError(
-                    ex,
-                    "Failed to mirror user into Usuario. Rolling back Identity user for {Email}",
-                    model.Email
-                );
-                await _userManager.DeleteAsync(identityUser);
-                ModelState.AddModelError(
-                    string.Empty,
-                    "No se pudo completar el registro. Intenta nuevamente."
-                );
+                    ModelState.AddModelError(string.Empty, error.Description);
+                }
                 return View(model);
             }
+
+            // No se asigna
+            // El Admin debe asignar el rol desde el panel de Usuarios
+
+            _logger.LogInformation("User {Email} registered successfully (pending approval)", model.Email);
+
+            // NO hacer login automático
+            TempData["SuccessMessage"] = "Registro exitoso. Un administrador revisará tu cuenta pronto.";
+            return RedirectToAction("Login", "Auth");
         }
 
         [HttpPost]
@@ -158,4 +131,3 @@ namespace POS.Web.Controllers
         }
     }
 }
-

@@ -10,10 +10,18 @@
             <h1 class="text-xl font-semibold text-gray-900">Pedidos</h1>
             <p class="text-sm text-gray-500">Administra y revisa los pedidos.</p>
         </div>
-        <a asp-action="CreatePedido"
-           class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
-            <i data-lucide="plus" class="w-4 h-4"></i> Nuevo Pedido
-        </a>
+
+        <div class="flex gap-2">
+            <a asp-action="ExportExcel"
+               class="inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-white hover:bg-green-700">
+                <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Exportar Excel
+            </a>
+
+            <a asp-action="CreatePedido"
+               class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
+                <i data-lucide="plus" class="w-4 h-4"></i> Nuevo Pedido
+            </a>
+        </div>
     </div>
 
     <!-- List -->
@@ -51,8 +59,8 @@
                             <tr class="hover:bg-gray-50">
                                 <td class="px-4 py-3">@p.Id</td>
                                 <td class="px-4 py-3">@p.Fecha.ToString("dd/MM/yyyy HH:mm")</td>
-                                <td class="px-4 py-3">@p.ClienteNombre ?? ("Cliente " + p.ClienteId)</td>
-                                <td class="px-4 py-3">@p.UsuarioNombre ?? ("Usuario " + p.UsuarioId)</td>
+                                <td class="px-4 py-3">@(p.ClienteNombre ?? "Cliente " + p.ClienteId)</td>
+                                <td class="px-4 py-3">@(p.UsuarioNombre ?? "Usuario " + p.UsuarioId)</td>
                                 <td class="px-4 py-3 text-right">@p.Subtotal.ToString("N2")</td>
                                 <td class="px-4 py-3 text-right">@p.Impuestos.ToString("N2")</td>
                                 <td class="px-4 py-3 text-right font-semibold">@p.Total.ToString("N2")</td>
@@ -93,3 +101,4 @@
           'px-2.5','py-1.5','text-red-600','hover:bg-red-50'));
     </script>
 }
+

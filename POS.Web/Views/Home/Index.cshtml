@@ -2,7 +2,97 @@
     ViewData["Title"] = "Home Page";
 }
 
-<div class="text-center">
-    <h1 class="text-[color:var(--txt-primary)] text-3xl">Bienvenido a Pyme Co.</h1>
+<div class="min-h-[calc(100vh-120px)] bg-gray-50 py-10">
+    <div class="max-w-6xl mx-auto px-4">
+        <!-- Header principal -->
+        <div class="text-center mb-10">
+            <h1 class="text-[color:var(--txt-primary)] text-3xl md:text-4xl font-semibold mb-3">
+                Bienvenido a Pyme Co.
+            </h1>
+            <p class="text-gray-600 text-base md:text-lg">
+                Sistema de Punto de Venta para gestionar productos, clientes y pedidos de tu negocio.
+            </p>
+        </div>
 
+        <!-- Acciones rápidas -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-10">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4">
+                Acciones rápidas
+            </h2>
+            <p class="text-sm text-gray-600 mb-4">
+                Elige cómo quieres empezar a trabajar hoy:
+            </p>
+
+            <div class="flex flex-col md:flex-row gap-3">
+                <a asp-controller="Pedido" asp-action="CreatePedido"
+                   class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium bg-[color:var(--txt-primary)] text-white hover:opacity-90 transition">
+                    <i data-lucide="receipt"></i>
+                    Crear nuevo pedido
+                </a>
+
+                <a asp-controller="Pedido" asp-action="Index"
+                   class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium bg-white border border-gray-200 text-gray-800 hover:bg-gray-50 transition">
+                    <i data-lucide="list"></i>
+                    Ver pedidos
+                </a>
+
+                <a asp-controller="Product" asp-action="ListProduct"
+                   class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium bg-white border border-gray-200 text-gray-800 hover:bg-gray-50 transition">
+                    <i data-lucide="package"></i>
+                    Gestionar productos
+                </a>
+
+                <a asp-controller="Client" asp-action="ListClient"
+                   class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium bg-white border border-gray-200 text-gray-800 hover:bg-gray-50 transition">
+                    <i data-lucide="users"></i>
+                    Ver clientes
+                </a>
+            </div>
+        </div>
+
+        <!-- Módulos del sistema -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                <h3 class="text-base font-semibold text-gray-800 mb-1 flex items-center gap-2">
+                    <i data-lucide="clipboard-list"></i>
+                    Pedidos
+                </h3>
+                <p class="text-sm text-gray-600 mb-3">
+                    Crea, consulta y administra pedidos con cálculo automático de impuestos y descuentos.
+                </p>
+                <a asp-controller="Pedido" asp-action="Index"
+                   class="text-sm font-medium text-[color:var(--txt-primary)] hover:underline">
+                    Ir a pedidos →
+                </a>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                <h3 class="text-base font-semibold text-gray-800 mb-1 flex items-center gap-2">
+                    <i data-lucide="box"></i>
+                    Productos
+                </h3>
+                <p class="text-sm text-gray-600 mb-3">
+                    Administra el catálogo: precios, impuestos, stock e imágenes de productos.
+                </p>
+                <a asp-controller="Product" asp-action="ListProduct"
+                   class="text-sm font-medium text-[color:var(--txt-primary)] hover:underline">
+                    Ir a productos →
+                </a>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                <h3 class="text-base font-semibold text-gray-800 mb-1 flex items-center gap-2">
+                    <i data-lucide="user"></i>
+                    Clientes
+                </h3>
+                <p class="text-sm text-gray-600 mb-3">
+                    Registra y gestiona clientes para facturación y seguimiento de compras.
+                </p>
+                <a asp-controller="Client" asp-action="ListClient"
+                   class="text-sm font-medium text-[color:var(--txt-primary)] hover:underline">
+                    Ir a clientes →
+                </a>
+            </div>
+        </div>
+    </div>
 </div>
