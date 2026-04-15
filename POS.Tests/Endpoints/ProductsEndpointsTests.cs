@@ -42,11 +42,14 @@ public class ProductsEndpointsTests : BaseWebTest
     [TestMethod]
     public async Task CreateProduct_Post_Redirects_On_Success()
     {
+        // ✅ Nombre único por timestamp para evitar "Product name already exists"
+        var uniqueSuffix = DateTime.Now.ToString("yyyyMMddHHmmss");
+
         var (token, _) = await AntiforgeryHelper.GetTokenAsync(Client, "/Product/CreateProduct");
 
         var form = new Dictionary<string, string>
         {
-            ["Name"] = "Test From MSTest",
+            ["Name"] = $"Test_{uniqueSuffix}",  // ✅ único cada vez
             ["CategoryId"] = "2",
             ["Price"] = "100.50",
             ["TaxPercent"] = "13",
@@ -74,6 +77,9 @@ public class ProductsEndpointsTests : BaseWebTest
     [TestMethod]
     public async Task EditProduct_Post_Redirects_On_Success()
     {
+        // ✅ Nombre único para evitar conflictos al editar varias veces
+        var uniqueSuffix = DateTime.Now.ToString("yyyyMMddHHmmss");
+
         var (token, _) = await AntiforgeryHelper.GetTokenAsync(
             Client,
             $"/Product/EditProduct/{_seedId}"
@@ -81,7 +87,7 @@ public class ProductsEndpointsTests : BaseWebTest
 
         var form = new Dictionary<string, string>
         {
-            ["Name"] = "Updated From MSTest",
+            ["Name"] = $"Updated_{uniqueSuffix}",  // ✅ único cada vez
             ["CategoryId"] = "3",
             ["Price"] = "123.45",
             ["TaxPercent"] = "13",
@@ -112,15 +118,17 @@ public class ProductsEndpointsTests : BaseWebTest
     [TestMethod]
     public async Task DeleteProduct_Post_Redirects_To_List()
     {
-        // Create a product to delete
+        // ✅ Crear un producto temporal con nombre único para luego borrarlo
+        var uniqueSuffix = DateTime.Now.ToString("yyyyMMddHHmmss");
+
         var (tokenForCreate, _) = await AntiforgeryHelper.GetTokenAsync(
             Client,
             "/Product/CreateProduct"
         );
         var createForm = new Dictionary<string, string>
         {
-            ["Name"] = "To be deleted",
-            ["CategoryId"] = "9",
+            ["Name"] = $"ToDelete_{uniqueSuffix}",  // ✅ único cada vez
+            ["CategoryId"] = "2",
             ["Price"] = "10",
             ["TaxPercent"] = "13",
             ["Stock"] = "1",
@@ -138,7 +146,6 @@ public class ProductsEndpointsTests : BaseWebTest
         var idStr = location.Split('/').Last();
         Assert.IsTrue(int.TryParse(idStr, out var newId));
 
-        // Delete it
         var (token, _) = await AntiforgeryHelper.GetTokenAsync(
             Client,
             $"/Product/DeleteProduct/{newId}"

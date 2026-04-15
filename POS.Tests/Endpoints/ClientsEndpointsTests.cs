@@ -13,7 +13,7 @@ public class ClientsEndpointsTests : BaseWebTest
     [ClassInitialize]
     public static void Setup(TestContext _)
     {
-        _seedId = SeedHelper.EnsureOneClient(TestWeb());
+        _seedId = SeedHelper.EnsureOneClient(Factory.Services);
     }
 
     private static IServiceProvider TestWeb() => Factory.Services;
@@ -42,14 +42,16 @@ public class ClientsEndpointsTests : BaseWebTest
     [TestMethod]
     public async Task CreateClient_Post_Redirects_On_Success()
     {
-        // Antiforgery ignored in Testing, but this still works if you re-enable it
+        // ✅ NationalId único por timestamp para evitar conflictos entre runs
+        var uniqueSuffix = DateTime.Now.ToString("MMddHHmmss");
+
         var (token, _) = await AntiforgeryHelper.GetTokenAsync(Client, "/Client/CreateClient");
 
         var form = new Dictionary<string, string>
         {
-            ["Name"] = "Client From MSTest",
-            ["NationalId"] = "202020202",
-            ["Email"] = "client@test.com",
+            ["Name"] = $"Client Test {uniqueSuffix}",
+            ["NationalId"] = $"2{uniqueSuffix}",   // ✅ único cada vez
+            ["Email"] = $"client{uniqueSuffix}@test.com",
             ["Phone"] = "2222-2222",
             ["Address"] = "Test Address",
             ["__RequestVerificationToken"] = token,
@@ -70,6 +72,9 @@ public class ClientsEndpointsTests : BaseWebTest
     [TestMethod]
     public async Task EditClient_Post_Redirects_On_Success()
     {
+        // ✅ NationalId único para evitar conflicto con el seed u otros runs
+        var uniqueSuffix = DateTime.Now.ToString("MMddHHmmss");
+
         var (token, _) = await AntiforgeryHelper.GetTokenAsync(
             Client,
             $"/Client/EditClient/{_seedId}"
@@ -77,9 +82,9 @@ public class ClientsEndpointsTests : BaseWebTest
 
         var form = new Dictionary<string, string>
         {
-            ["Name"] = "Updated Client MSTest",
-            ["NationalId"] = "303030303",
-            ["Email"] = "updated.client@test.com",
+            ["Name"] = $"Updated Client {uniqueSuffix}",
+            ["NationalId"] = $"3{uniqueSuffix}",   // ✅ único cada vez
+            ["Email"] = $"updated{uniqueSuffix}@test.com",
             ["Phone"] = "1234-5678",
             ["Address"] = "Updated Address",
             ["__RequestVerificationToken"] = token,
@@ -106,15 +111,18 @@ public class ClientsEndpointsTests : BaseWebTest
     [TestMethod]
     public async Task DeleteClient_Post_Redirects_To_List()
     {
+        // ✅ Crear un cliente temporal con datos únicos para luego borrarlo
+        var uniqueSuffix = DateTime.Now.ToString("MMddHHmmss");
+
         var (tokenForCreate, _) = await AntiforgeryHelper.GetTokenAsync(
             Client,
             "/Client/CreateClient"
         );
         var createForm = new Dictionary<string, string>
         {
-            ["Name"] = "Client To Delete",
-            ["NationalId"] = "404040404",
-            ["Email"] = "del@test.com",
+            ["Name"] = $"Client To Delete {uniqueSuffix}",
+            ["NationalId"] = $"4{uniqueSuffix}",   // ✅ único cada vez
+            ["Email"] = $"del{uniqueSuffix}@test.com",
             ["Phone"] = "9999-9999",
             ["Address"] = "Somewhere",
             ["__RequestVerificationToken"] = tokenForCreate,

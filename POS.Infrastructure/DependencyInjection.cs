@@ -35,7 +35,14 @@ public static class DependencyInjection
                 ?? throw new InvalidOperationException("Missing ConnectionStrings:Default");
             services.AddDbContext<AppDbContext>(opt =>
             {
-                opt.UseSqlServer(conn);
+                opt.UseSqlServer(conn, sqlOptions =>
+                {
+                    sqlOptions.EnableRetryOnFailure(
+                        maxRetryCount: 5,
+                        maxRetryDelay: TimeSpan.FromSeconds(30),
+                        errorNumbersToAdd: null
+                    );
+                });
             });
         }
 
